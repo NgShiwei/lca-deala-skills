@@ -1,5 +1,5 @@
 # ==========================================================================
-# Package list 1 of 2  --  Claude LCA and DEALA agent skills
+# Package list 1 of 2  --  LCA and DEALA agent skills
 # ==========================================================================
 #
 # HOW TO USE THIS FILE
@@ -8,7 +8,7 @@
 #    then move into the folder that holds this file. Keep the double quotes:
 #    they stop a space in the path from breaking the command.
 #
-#        cd "<path to claude-lca-deala-skills>"
+#        cd "<path to lca-deala-skills>"
 #
 # 2. Run this file first:
 #

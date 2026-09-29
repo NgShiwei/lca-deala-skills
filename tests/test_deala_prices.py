@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "plugins" / "claude-lca-deala-skills"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "plugins" / "lca-deala-skills"
                        / "skills" / "deala-calculator" / "scripts"))
 import deala_prices as dp  # noqa: E402
 

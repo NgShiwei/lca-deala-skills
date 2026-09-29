@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "plugins" / "claude-lca-deala-skills"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "plugins" / "lca-deala-skills"
                        / "skills" / "lca-calculator" / "scripts"))
 import ecoinvent_setup as es  # noqa: E402
 

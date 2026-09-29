@@ -18,8 +18,8 @@ premise workflows. If a project is on legacy Brightway 2 (`bw2calc.LCA` only, no
 
 Paths in this skill (`scripts/...`, `references/...`, `../<other skill>/...`)
 are relative to this skill's own folder. The other skills it names are its
-siblings in the `claude-lca-deala-skills` plugin, invoked there as
-`claude-lca-deala-skills:<skill name>`.
+siblings in the `lca-deala-skills` plugin, invoked there as
+`lca-deala-skills:<skill name>`.
 
 ## Five principles that prevent expensive mistakes
 
@@ -121,7 +121,7 @@ Detailed, copy-adaptable code for every step is in
    scripts/check_environment.py`, which runs in the kernel itself. Add `--no-deala` for purely environmental work. It prints
    `sys.executable` and fails with the fix for each problem: the Brightway 2.5
    pins, `ecoinvent_interface >= 3.1`, `matrix_utils >= 0.6.3`, deala. Don't
-   start until it prints `OK`. Installing is in `SETUP.md` in the repository (https://github.com/NgShiwei/claude-lca-deala-skills).
+   start until it prints `OK`. Installing is in `SETUP.md` in the repository (https://github.com/NgShiwei/lca-deala-skills).
 1. **Set up** — import `bw2data as bd`, `bw2calc as bc`, `bw2io as bi`,
    `pandas`, `numpy`; select the project with `bd.projects.set_current(<name>)`;
    list databases with `list(bd.databases)`.

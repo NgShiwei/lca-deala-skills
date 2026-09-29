@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 
-LCI = Path(__file__).resolve().parents[1] / "plugins" / "claude-lca-deala-skills" / "skills" / "lci-extractor"
+LCI = Path(__file__).resolve().parents[1] / "plugins" / "lca-deala-skills" / "skills" / "lci-extractor"
 sys.path.insert(0, str(LCI / "scripts"))
 import lci_helpers  # noqa: E402
 

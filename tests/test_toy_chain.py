@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-TOY = Path(__file__).resolve().parents[1] / "plugins" / "claude-lca-deala-skills" / "examples" / "toy-chain"
+TOY = Path(__file__).resolve().parents[1] / "plugins" / "lca-deala-skills" / "examples" / "toy-chain"
 sys.path.insert(0, str(TOY))
 import run_toy  # noqa: E402
 

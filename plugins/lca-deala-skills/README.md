@@ -1,4 +1,4 @@
-# Claude LCA and DEALA agent skills
+# LCA and DEALA agent skills
 
 Four skills that help Claude carry out life-cycle work with
 [Brightway 2.5](https://docs.brightway.dev):
@@ -49,9 +49,12 @@ a task needs them:
 
 The two Brightway skills need Python 3.11 with a pinned set of packages. The
 repository's
-[SETUP.md](https://github.com/NgShiwei/claude-lca-deala-skills/blob/main/SETUP.md)
+[SETUP.md](https://github.com/NgShiwei/lca-deala-skills/blob/main/SETUP.md)
 walks through it, and `skills/lca-calculator/scripts/check_environment.py`
 checks the result and prints the fix for anything wrong.
 
+Licensed under BSD 3-Clause (see `LICENSE`). ecoinvent and any other
+database you use with these skills remain under their own licences.
+
 Source, tests and issues:
-[github.com/NgShiwei/claude-lca-deala-skills](https://github.com/NgShiwei/claude-lca-deala-skills).
+[github.com/NgShiwei/lca-deala-skills](https://github.com/NgShiwei/lca-deala-skills).

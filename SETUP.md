@@ -35,7 +35,7 @@ From the folder that holds `requirements.txt` (keep the double quotes; they
 stop a space in the path from breaking the command):
 
 ```
-cd "<path to claude-lca-deala-skills>"
+cd "<path to lca-deala-skills>"
 python -m pip install -r requirements.txt
 python -m pip install --no-deps -r requirements-deala.txt
 ```
@@ -67,7 +67,7 @@ Run the shared check **in the interpreter that will do the work**: inside the
 activated venv, or from a notebook cell running on the venv's kernel.
 
 ```
-python plugins/claude-lca-deala-skills/skills/lca-calculator/scripts/check_environment.py
+python plugins/lca-deala-skills/skills/lca-calculator/scripts/check_environment.py
 ```
 
 It prints `sys.executable` and checks, failing with the fix for each problem:
@@ -92,7 +92,7 @@ real terminal, and your password should never pass through a chat with an
 agent.
 
 ```
-python plugins/claude-lca-deala-skills/skills/lca-calculator/scripts/ecoinvent_setup.py --project <project>
+python plugins/lca-deala-skills/skills/lca-calculator/scripts/ecoinvent_setup.py --project <project>
 ```
 
 1. **Credentials.** If none are stored, it asks for your ecoinvent username
@@ -148,7 +148,7 @@ activating a venv.
 interpreter (`!python ...` would run whatever `python` the shell finds first):
 
 ```
-%run plugins/claude-lca-deala-skills/skills/lca-calculator/scripts/check_environment.py
+%run plugins/lca-deala-skills/skills/lca-calculator/scripts/check_environment.py
 ```
 
 Its first line, `interpreter : ...`, must point inside your `.venv`.
@@ -204,7 +204,7 @@ re-run.
 methods alone, in minutes:
 
 ```
-python plugins/claude-lca-deala-skills/skills/lca-calculator/scripts/ecoinvent_setup.py --project <project> --methods-only
+python plugins/lca-deala-skills/skills/lca-calculator/scripts/ecoinvent_setup.py --project <project> --methods-only
 ```
 
 But the two databases underneath were still written by the wrong `bw2io`, and

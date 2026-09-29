@@ -1,7 +1,7 @@
 """deala_helpers' offline half: selectors, transport table, edge-table gates.
 
 Built on the toy supply chain, so every expected number can be checked by hand
-against plugins/claude-lca-deala-skills/examples/toy-chain/README.md.
+against plugins/lca-deala-skills/examples/toy-chain/README.md.
 """
 import sys
 from pathlib import Path
@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-TOY = Path(__file__).resolve().parents[1] / "plugins" / "claude-lca-deala-skills" / "examples" / "toy-chain"
+TOY = Path(__file__).resolve().parents[1] / "plugins" / "lca-deala-skills" / "examples" / "toy-chain"
 sys.path.insert(0, str(TOY))
 import run_toy  # noqa: E402
 import deala_helpers as dh  # noqa: E402  (put on the path by run_toy)

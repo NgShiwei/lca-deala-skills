@@ -79,3 +79,19 @@ def test_paths_named_in_skill_docs_exist(skill):
             if not (skill / target).exists():
                 missing.append(f"{md.relative_to(REPO)}: {ref}")
     assert not missing, "\n".join(missing)
+
+
+def test_licence_ships_with_the_plugin():
+    for entry in entries():
+        manifest = json.loads((plugin_dir(entry) / ".claude-plugin" / "plugin.json").read_text())
+        assert manifest["license"] == "BSD-3-Clause"
+        assert (plugin_dir(entry) / "LICENSE").read_text() == (REPO / "LICENSE").read_text()
+        assert "BSD 3-Clause License" in (REPO / "LICENSE").read_text()
+
+
+def test_renamed_plugin_migrates():
+    # The plugin was first published under another name; existing installs
+    # follow this map instead of breaking. Keep entries forever (append-only).
+    names = {e["name"] for e in entries()}
+    for old, new in MARKET.get("renames", {}).items():
+        assert new is None or new in names, (old, new)

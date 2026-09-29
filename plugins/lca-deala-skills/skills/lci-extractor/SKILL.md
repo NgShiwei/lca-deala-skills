@@ -23,8 +23,8 @@ lca-calculator's job, reached via `to_new_process_template()`.
 
 Paths in this skill (`scripts/...`, `references/...`, `../<other skill>/...`)
 are relative to this skill's own folder. The other skills it names are its
-siblings in the `claude-lca-deala-skills` plugin, invoked there as
-`claude-lca-deala-skills:<skill name>`.
+siblings in the `lca-deala-skills` plugin, invoked there as
+`lca-deala-skills:<skill name>`.
 
 **Licensed data.** The rules in the `lca-calculator` skill's "Licensed data"
 section apply here too: never ask for the ecoinvent password in chat, the user

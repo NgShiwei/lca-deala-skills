@@ -1,4 +1,4 @@
-# Claude LCA and DEALA agent skills
+# LCA and DEALA agent skills
 
 Four [Claude Code](https://code.claude.com) skills for life-cycle work with
 [Brightway 2.5](https://docs.brightway.dev), packaged as one plugin:
@@ -19,12 +19,12 @@ selector that finds zero or several candidates stops rather than guessing.
 In Claude Code:
 
 ```
-claude plugin marketplace add NgShiwei/claude-lca-deala-skills
-claude plugin install claude-lca-deala-skills@ngshiwei
+claude plugin marketplace add NgShiwei/lca-deala-skills
+claude plugin install lca-deala-skills@ngshiwei
 ```
 
-The skills then appear as `claude-lca-deala-skills:lca-calculator`,
-`claude-lca-deala-skills:deala-calculator` and so on. Claude uses them on its
+The skills then appear as `lca-deala-skills:lca-calculator`,
+`lca-deala-skills:deala-calculator` and so on. Claude uses them on its
 own when a task matches; you can also call one by name.
 
 The two Brightway skills need a Python environment with the pinned Brightway
@@ -39,7 +39,7 @@ and so should you:
 
 - **Your ecoinvent password is never typed into a chat.** You store it once, in
   your own terminal, with
-  `plugins/claude-lca-deala-skills/skills/lca-calculator/scripts/ecoinvent_setup.py`.
+  `plugins/lca-deala-skills/skills/lca-calculator/scripts/ecoinvent_setup.py`.
   It keeps the credentials outside any repository. The agent can check what is
   stored (it sees the username, never the password) but cannot enter them.
 - **The ecoinvent import takes about 35 minutes and 1.6 GB.** An agent may start
@@ -52,13 +52,13 @@ licensed database (Agri-footprint, for example) is bring-your-own.
 
 ## Try it without Brightway
 
-`plugins/claude-lca-deala-skills/examples/toy-chain/` is a made-up supply chain
+`plugins/lca-deala-skills/examples/toy-chain/` is a made-up supply chain
 (three countries, three steps, invented numbers) that runs the real transport,
 edge-table and graph code with only pandas and networkx. Its README works the
 answer out by hand.
 
 ```
-python plugins/claude-lca-deala-skills/examples/toy-chain/run_toy.py
+python plugins/lca-deala-skills/examples/toy-chain/run_toy.py
 ```
 
 ## Tests
@@ -81,25 +81,32 @@ fresh clone.
 Installed copies update only when the plugin's version changes. For every
 release:
 
-1. Bump `version` in `plugins/claude-lca-deala-skills/.claude-plugin/plugin.json`
+1. Bump `version` in `plugins/lca-deala-skills/.claude-plugin/plugin.json`
    (`0.1.0` → `0.1.1` for fixes, `0.2.0` for new behaviour). Set it only there,
    never in `marketplace.json` too.
 2. Run `python -m pytest` and `python tools/check_private_terms.py`; both must
    pass.
 3. Commit and push. Users get it with
-   `claude plugin update claude-lca-deala-skills@ngshiwei`, or automatically if
+   `claude plugin update lca-deala-skills@ngshiwei`, or automatically if
    they turned on auto-update for the `ngshiwei` marketplace in `/plugin`.
 
 A push without a version bump reaches nobody who has already installed.
+
+## Licence
+
+BSD 3-Clause (see [LICENSE](LICENSE)), the same licence as Brightway and deala.
+The licence covers this repository's code and text only. ecoinvent and any
+other database you use with the skills stay under their own licences.
 
 ## Layout
 
 ```
 .claude-plugin/marketplace.json          the marketplace (this repository)
-plugins/claude-lca-deala-skills/
+plugins/lca-deala-skills/
   .claude-plugin/plugin.json             the plugin
   skills/<skill>/SKILL.md                the four skills, with scripts/ and references/
   examples/toy-chain/                    the offline worked example
 requirements.txt, requirements-deala.txt the pinned environment (see SETUP.md)
+LICENSE                                  BSD 3-Clause (a copy ships inside the plugin)
 tests/, tools/                           offline tests and the pre-release guard
 ```

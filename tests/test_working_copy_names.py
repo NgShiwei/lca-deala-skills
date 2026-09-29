@@ -18,7 +18,7 @@ def lca_helpers(monkeypatch):
     monkeypatch.setitem(sys.modules, "bw2data", bd)
     monkeypatch.setitem(sys.modules, "bw2calc", types.ModuleType("bw2calc"))
     monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / "plugins"
-                                    / "claude-lca-deala-skills" / "skills" / "lca-calculator" / "scripts"))
+                                    / "lca-deala-skills" / "skills" / "lca-calculator" / "scripts"))
     monkeypatch.delitem(sys.modules, "lca_helpers", raising=False)
     import lca_helpers
     return lca_helpers
