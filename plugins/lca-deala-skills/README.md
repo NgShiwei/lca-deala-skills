@@ -36,13 +36,22 @@ a task needs them:
 
 - **Calculations** run locally, in your own Python environment, on your own
   Brightway databases. Nothing is uploaded.
-- **ecoinvent**: `skills/lca-calculator/scripts/ecoinvent_setup.py` connects to
-  ecoinvent's servers (through the `ecoinvent_interface` and `bw2io` packages)
-  to download the database you are licensed for, only when you run it. It asks
-  for your ecoinvent password in your own terminal and stores it with
-  `ecoinvent_interface` in that package's settings folder on your machine.
-  Claude is instructed never to ask for the password in chat, and the script
-  never prints it.
+- **ecoinvent credentials** are the only credential the plugin touches, in
+  one script, `skills/lca-calculator/scripts/ecoinvent_setup.py`, which you
+  run yourself in your own terminal:
+  - **What it reads:** your ecoinvent username and password, from the
+    environment variables `ECOINVENT_USERNAME` / `ECOINVENT_PASSWORD` or
+    `EI_USERNAME` / `EI_PASSWORD` if you set them, otherwise from the
+    `ecoinvent_interface` settings folder on your machine. If none is stored,
+    it asks you in your terminal (the password with `getpass`, not shown) and
+    stores them in that same folder with `ecoinvent_interface`.
+  - **Where they go:** only to ecoinvent's own login server, through the
+    `ecoinvent_interface` and `bw2io` packages, to download the ecoinvent
+    release your licence covers. They are sent nowhere else, and never to
+    Anthropic or to the plugin's author.
+  - **What is shown:** the username only. The password is never printed or
+    logged, and Claude is instructed never to ask for it in chat. `--check`
+    reports what is stored without contacting ecoinvent.
 - **Everything else** reads and writes files in your project only.
 
 ## Setting up Python

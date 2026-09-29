@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>LCA and DEALA agent skills</title>
+  <rect width="256" height="256" rx="56" fill="#1d5c4d"/>
+  <!-- sustainability: a leaf -->
+  <path d="M58 94 C54 60 80 36 116 34 C120 70 96 96 58 94 Z" fill="#8fd694"/>
+  <path d="M60 92 C76 74 92 60 110 42" fill="none" stroke="#1d5c4d" stroke-width="5" stroke-linecap="round"/>
+  <!-- economics: a dollar sign -->
+  <circle cx="170" cy="64" r="32" fill="#f2c14e"/>
+  <text x="170" y="80" text-anchor="middle" font-family="Arial, Helvetica, sans-serif"
+        font-size="46" font-weight="700" fill="#1d5c4d">$</text>
+  <!-- the supply chain: three stages, cheapest route in white -->
+  <g stroke="#7fb8a6" stroke-width="4" stroke-linecap="round" opacity="0.55">
+    <line x1="72" y1="128" x2="128" y2="128"/><line x1="72" y1="128" x2="128" y2="168"/>
+    <line x1="72" y1="168" x2="128" y2="128"/><line x1="72" y1="208" x2="128" y2="168"/>
+    <line x1="72" y1="208" x2="128" y2="208"/><line x1="128" y1="128" x2="184" y2="128"/>
+    <line x1="128" y1="128" x2="184" y2="168"/><line x1="128" y1="168" x2="184" y2="168"/>
+    <line x1="128" y1="208" x2="184" y2="168"/><line x1="128" y1="208" x2="184" y2="128"/>
+  </g>
+  <polyline points="72,168 128,208 184,208" fill="none" stroke="#ffffff" stroke-width="9"
+            stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#7fb8a6">
+    <circle cx="72" cy="128" r="11"/><circle cx="72" cy="208" r="11"/>
+    <circle cx="128" cy="128" r="11"/><circle cx="128" cy="168" r="11"/>
+    <circle cx="184" cy="128" r="11"/><circle cx="184" cy="168" r="11"/>
+  </g>
+  <g fill="#ffffff">
+    <circle cx="72" cy="168" r="14"/><circle cx="128" cy="208" r="14"/><circle cx="184" cy="208" r="14"/>
+  </g>
+</svg>
