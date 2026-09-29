@@ -21,6 +21,11 @@ exact CSV template the **lca-calculator** skill consumes. Extraction ends at a c
 handoff: linking every flow to a background database and running LCIA is the
 lca-calculator's job, reached via `to_new_process_template()`.
 
+Paths in this skill (`scripts/...`, `references/...`, `../<other skill>/...`)
+are relative to this skill's own folder. The other skills it names are its
+siblings in the `claude-lca-deala-skills` plugin, invoked there as
+`claude-lca-deala-skills:<skill name>`.
+
 **Licensed data.** The rules in the `lca-calculator` skill's "Licensed data"
 section apply here too: never ask for the ecoinvent password in chat, the user
 stores credentials in their own terminal, never read a licensed export whole,

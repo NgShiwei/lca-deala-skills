@@ -36,7 +36,8 @@ from importlib import metadata
 
 INSTALL = ("python -m pip install -r requirements.txt\n"
            "        python -m pip install --no-deps -r requirements-deala.txt\n"
-           "        (from the claude-lca-deala-skills folder, in this interpreter's environment)")
+           "        (in this interpreter's environment, from a clone of\n"
+           "        https://github.com/NgShiwei/claude-lca-deala-skills; see its SETUP.md)")
 
 PINNED = {"bw2data": "4.7", "bw2calc": "2.5.0", "bw2io": "0.9.17"}
 FLOORS = {"matrix_utils": "0.6.3", "ecoinvent_interface": "3.1"}
@@ -95,7 +96,7 @@ def check(require_deala: bool = True, verbose: bool = True) -> list:
     if sys.version_info[:2] != (3, 11):
         problems.append((
             f"Python {sys.version.split()[0]}; these pins were verified on 3.11",
-            "create a Python 3.11 venv and install into it (SETUP.md, step 1)"))
+            "create a Python 3.11 venv and install into it (https://github.com/NgShiwei/claude-lca-deala-skills, SETUP.md step 1)"))
 
     for dist, want in PINNED.items():
         have = _version(dist)

@@ -36,6 +36,11 @@ CLI — so it is still the place to look. What must **not** drift between the tw
 is the node/edge/layer contract below: a copy that changes which edge carries
 which process score returns a different answer without erroring.
 
+Paths in this skill (`scripts/...`, `references/...`, `../<other skill>/...`)
+are relative to this skill's own folder. The other skills it names are its
+siblings in the `claude-lca-deala-skills` plugin, invoked there as
+`claude-lca-deala-skills:<skill name>`.
+
 **Licensed data.** The rules in the `lca-calculator` skill's "Licensed data"
 section apply here too: never ask for the ecoinvent password in chat, the user
 stores credentials in their own terminal, never read a licensed export whole,

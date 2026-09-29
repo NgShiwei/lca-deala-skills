@@ -1,0 +1,16 @@
+{
+  "name": "ngshiwei",
+  "description": "Claude LCA and DEALA agent skills: Brightway life-cycle assessment, DEALA life-cycle costing, inventory extraction from papers, and supply-chain path optimisation.",
+  "owner": {
+    "name": "Shiwei",
+    "url": "https://github.com/NgShiwei"
+  },
+  "plugins": [
+    {
+      "name": "claude-lca-deala-skills",
+      "source": "./plugins/claude-lca-deala-skills",
+      "description": "Claude LCA and DEALA agent skills: Brightway 2.5 LCA, DEALA economic cost, LCI extraction from articles, and lowest-impact supply-chain routing.",
+      "category": "science"
+    }
+  ]
+}

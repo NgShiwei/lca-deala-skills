@@ -24,6 +24,11 @@ Assumes **Brightway 2.5** (`bw2data` 4.x, `bw2calc` 2.5 `MultiLCA`) with the
 `deala` package's activity databases and the `DEALA-Cost (BEIC 1)` method
 installed.
 
+Paths in this skill (`scripts/...`, `references/...`, `../<other skill>/...`)
+are relative to this skill's own folder. The other skills it names are its
+siblings in the `claude-lca-deala-skills` plugin, invoked there as
+`claude-lca-deala-skills:<skill name>`.
+
 **Licensed data.** The rules in the `lca-calculator` skill's "Licensed data"
 section apply here too: never ask for the ecoinvent password in chat, the user
 stores credentials in their own terminal, never read a licensed export whole,
@@ -59,7 +64,7 @@ traverses that link and sums the input's price flow.
    upgrading the package, not by patching source or monkeypatching at runtime,
    and not by downgrading scipy — GWP scoring is fine under scipy 1.13.1 and
    downgrading breaks the environmental half. The install itself is in the
-   repository's `SETUP.md`.
+   `SETUP.md` in the repository (https://github.com/NgShiwei/claude-lca-deala-skills).
 
 2. **`bd.databases.clean()` after any injection or edit — not a named
    `db.process()`.** Every `.save()` flags its database dirty; a dirty DB has a

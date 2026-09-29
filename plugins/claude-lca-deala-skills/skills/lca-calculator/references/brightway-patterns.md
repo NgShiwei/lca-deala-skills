@@ -14,8 +14,8 @@ Run it inside the activated virtual environment, or from a notebook cell on
 that environment's kernel with `%run scripts/check_environment.py` (not
 `!python ...`, which runs whatever `python` the shell finds first). It prints
 `sys.executable`, so you can see which interpreter you are really in, and fails
-with the fix for each problem. Installing the environment is in the
-repository's `SETUP.md`.
+with the fix for each problem. Installing the environment is in `SETUP.md` in
+the repository (https://github.com/NgShiwei/claude-lca-deala-skills).
 
 **Activate the environment; don't just point at its interpreter.** On Windows,
 running an environment's `python.exe` without activating it can leave its DLL
