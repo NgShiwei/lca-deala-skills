@@ -92,6 +92,12 @@ release:
 
 A push without a version bump reaches nobody who has already installed.
 
+## Privacy
+
+The plugin collects nothing and has no server. It sends data to one service
+only, ecoinvent, and only when you run the ecoinvent setup script. Details:
+[PRIVACY.md](PRIVACY.md).
+
 ## Licence
 
 BSD 3-Clause (see [LICENSE](LICENSE)), the same licence as Brightway and deala.

@@ -1,7 +1,7 @@
 {
   "name": "lca-deala-skills",
   "displayName": "LCA and DEALA agent skills",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Four skills for life-cycle work with Brightway 2.5: LCA calculation and safe database editing, DEALA life-cycle costing, extracting an inventory from a scientific article, and finding the lowest-impact supply chain across countries.",
   "author": {
     "name": "Shiwei",
@@ -10,6 +10,7 @@
   "homepage": "https://github.com/NgShiwei/lca-deala-skills",
   "repository": "https://github.com/NgShiwei/lca-deala-skills",
   "license": "BSD-3-Clause",
+  "privacyPolicyUrl": "https://github.com/NgShiwei/lca-deala-skills/blob/main/PRIVACY.md",
   "keywords": [
     "lca",
     "life-cycle-assessment",

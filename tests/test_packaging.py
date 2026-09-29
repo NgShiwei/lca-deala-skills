@@ -14,7 +14,7 @@ REPO = Path(__file__).resolve().parents[1]
 MARKET = json.loads((REPO / ".claude-plugin" / "marketplace.json").read_text())
 KEBAB = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 PLUGIN_FIELDS = {"$schema", "name", "displayName", "version", "description", "author",
-                 "homepage", "repository", "license", "keywords", "metadata",
+                 "homepage", "repository", "license", "privacyPolicyUrl", "keywords", "metadata",
                  "defaultEnabled", "dependencies", "settings", "userConfig", "channels",
                  "skills", "commands", "agents", "hooks", "mcpServers", "lspServers",
                  "outputStyles", "workflows", "experimental"}
@@ -95,3 +95,12 @@ def test_renamed_plugin_migrates():
     names = {e["name"] for e in entries()}
     for old, new in MARKET.get("renames", {}).items():
         assert new is None or new in names, (old, new)
+
+
+def test_privacy_policy_url_points_at_the_repo_file():
+    base = "https://github.com/NgShiwei/lca-deala-skills/blob/main/"
+    for entry in entries():
+        manifest = json.loads((plugin_dir(entry) / ".claude-plugin" / "plugin.json").read_text())
+        url = manifest["privacyPolicyUrl"]
+        assert url.startswith(base)
+        assert (REPO / url[len(base):]).is_file(), url
