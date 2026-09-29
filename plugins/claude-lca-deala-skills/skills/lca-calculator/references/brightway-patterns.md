@@ -42,7 +42,7 @@ list(bd.databases)       # what's available in this project
 
 ```python
 # Make a working copy so the source stays pristine:
-bd.Database("<source db>").copy("DEALA <working name>")
+bd.Database("<source db>").copy("<source db>_working")   # never "DEALA" in the name
 
 # Delete a stale working database (IRREVERSIBLE — confirm the name first):
 del bd.databases["<working name>"]

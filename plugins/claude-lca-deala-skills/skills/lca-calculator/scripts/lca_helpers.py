@@ -25,7 +25,15 @@ def working_copy(source_name, working_name, overwrite=False):
 
     Editing an imported reference database (ecoinvent, Agri-footprint) in place is
     the one mistake you cannot cheaply undo. Always branch a working copy first.
+
+    Refuses a name containing "DEALA": deala's import_DEALA_activities deletes
+    every database whose name contains it (deala_io.py:367-370). Use
+    'Costed_<db>' for a cost layer.
     """
+    if "DEALA" in working_name:
+        raise ValueError(
+            f"{working_name!r} contains 'DEALA'; deala's import_DEALA_activities "
+            "deletes every database whose name contains it. Use e.g. 'Costed_<db>'.")
     if working_name in bd.databases:
         if not overwrite:
             raise ValueError(
@@ -580,7 +588,7 @@ def build_process(header, resolved, working_db_name, coproduct_handling=None,
     # Refuse to write into anything that looks like an imported reference database.
     # Heuristic: it carries a known ecoinvent/biosphere prefix, or names an
     # Agri-footprint import. (A working copy should be named distinctly, e.g.
-    # '<db>_working' / 'DEALA ...'.)
+    # '<db>_working' / 'Costed_<db>'.)
     _REF_PREFIXES = ("ecoinvent-", "biosphere")
     if (working_db_name.startswith(_REF_PREFIXES)
             or working_db_name.lower().startswith("agri-footprint")):

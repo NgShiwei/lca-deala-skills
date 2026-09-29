@@ -22,7 +22,9 @@ These come first because ignoring them is what wrecks a day of work.
 
 1. **Never edit an original/reference database in place. Work on a copy.**
    Copying activities into a "working" database (e.g. `<db>_working`,
-   `DEALA <db>`) means an editing mistake never corrupts the source you imported.
+   `Costed_<db>`) means an editing mistake never corrupts the source you imported.
+   Never put "DEALA" in a database name: deala's own import deletes every
+   database whose name contains it (see the `deala-calculator` skill, rule 5).
    Duplicating a whole database is cheap relative to re-importing ecoinvent.
    See `references/working-databases-and-cleanup.md`.
 

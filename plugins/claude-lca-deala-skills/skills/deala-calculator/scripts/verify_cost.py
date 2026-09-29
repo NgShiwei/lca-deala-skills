@@ -9,11 +9,11 @@ Usage (Windows: use the ``py`` launcher; ``python`` is often not on PATH)::
 
     set PYTHONIOENCODING=utf-8
     py verify_cost.py --project <project> ^
-        --db "<costed modular db>" ^
+        --db "Costed_<modular db>" ^
         --activity "<activity name substring>" --country <XX>
 
     # regression gate over every cut-off activity
-    py verify_cost.py --project <project> --db "<costed modular db>" --all
+    py verify_cost.py --project <project> --db "Costed_<modular db>" --all
 
 Only one Python process may hold the project at a time — kill stray
 ``python.exe`` (and shut the Jupyter *server*, not just the tab) first.

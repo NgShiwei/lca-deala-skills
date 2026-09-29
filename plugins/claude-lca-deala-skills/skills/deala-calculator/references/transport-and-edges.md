@@ -14,12 +14,15 @@ alone, FU `{act.id: 1}` — which returns USD per tonne-kilometre.
 rates = dh.transport_rates()      # {(mode, location): USD/tkm}
 ```
 
-Country-specific rates exist only for **CN, DE, SE**; every other origin or
-destination falls back to **GLO**.
+`transport_rates` scores every location DEALA carries for each freight
+activity. Where DEALA has a country's own rate, that country uses it; every
+other origin or destination falls back to **GLO**. Which countries have their
+own rate is read from the database, not hard-coded, and each lookup matches
+name and location exactly and raises on a duplicate.
 
-**Sanity anchors (GLO, validated):** lorry `0.207`, train `0.097`, sea `0.0032`
-USD/tkm. Sea being ~65× cheaper than road per tonne-km is the expected shape; if
-your rates don't show that ordering, something is mis-linked.
+**Sanity check:** sea should be far cheaper per tonne-km than rail, and rail
+cheaper than road (sea tens of times cheaper than road is the expected shape).
+If your rates don't show that ordering, something is mis-linked.
 
 ## Route model
 
@@ -36,15 +39,21 @@ From `seadistance.csv` (ISO3 country pairs), per pair:
 >32 t, EURO6); longer than that, by rail. `RAIL_THRESHOLD_KM = 800`.
 
 **Rate keying:** legs 1 and 2 use the **origin** country's rate; leg 3 uses the
-**destination** country's. (Only matters when one end is CN/DE/SE.)
+**destination** country's. (Only matters when one end has its own DEALA rate.)
 
 **Units:** built per tonne, then divided by 1000 → **USD/kg**, matching the
 per-kg basis of the emission table. Getting this wrong is a silent 1000× error
 that still produces a plausible-looking graph, so check one pair by hand.
 
 ```python
-transport = dh.build_transport_table(rates, "seadistance.csv", country_list, iso2_to_iso3)
+transport = dh.build_transport_table(rates, "seadistance.csv", country_list)
 ```
+
+The distance CSV is keyed on ISO3. Pass `iso2_to_iso3={...}` explicitly, or
+omit it and `country_converter` derives it. Either way the function **raises**
+if a country has no ISO3 code or a cross-country pair has no row in the CSV,
+naming the gap. (A map that silently covered only some countries used to build
+only their pairs, and the rest vanished downstream.)
 
 Expect `n²` pairs for `n` countries, same-country rows all 0, no NaN.
 
@@ -78,13 +87,34 @@ edges = dh.build_edge_table(
 edges.to_csv("calculated_costs_subset.csv", index=False)
 ```
 
-Gate before continuing: **0 NaN** in `scale` and in the score column. A NaN scale
-means a `(country, process_base)` pair failed to merge — usually a name-parsing
+**The table raises on any NaN** in `scale` or in the score column, naming the
+countries and steps. A NaN row would pass a row-count check, then the graph
+builder would skip it (it keeps only non-NaN weights) and the country would
+vanish from the graph instead of failing. A NaN scale means a
+`(country, process_base)` pair failed to merge — usually a name-parsing
 mismatch, not missing data. `dh.parse_names()` uses the same regexes as the
 environmental pipeline precisely to prevent this.
 
-Expect one row per (origin, step, destination): for `n` countries and `k`
-steps that can all be done everywhere, `n × k × n`.
+**Step feasibility.** When not every country can do every step (some process
+but don't grow, say), pass `countries_for_step=`, a function from a 1-based
+step number to the countries able to do it. It is called for steps `1..N+1`,
+`N+1` being the pass-through layer. A row for step `i` is then kept only when
+its destination can perform step `i+1`: shipping into a country that cannot
+take the next step is a dead end, not a route. Write the rule once, in the
+project's config, and use the same function everywhere.
+
+```python
+PRODUCERS, ALL = [...], [...]
+ENTRY_STEP = 3                      # first step the non-producers can do
+def countries_for_step(step):
+    return PRODUCERS if step < ENTRY_STEP else ALL
+
+edges = dh.build_edge_table(..., countries_for_step=countries_for_step)
+```
+
+Expect one row per feasible (origin, step, destination):
+`Σ_i |countries_for_step(i)| × |countries_for_step(i+1)|`, or `n × k × n` when
+every country can do every step. Assert that count in the project.
 
 ## Handoff to `supply-chain-optimizer`
 

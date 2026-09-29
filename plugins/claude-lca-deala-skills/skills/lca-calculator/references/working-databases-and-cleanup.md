@@ -16,11 +16,16 @@ So the standard shape of an LCA editing project is a chain of copies:
 ecoinvent / Agri-footprint      (reference — never edited)
         └── <db>_working        (working copy — custom processes)
                 └── Modular_<db>    (cut-off / modular variant)
-                        └── DEALA …     (economic layer)
+                        └── Costed_<db>  (economic layer)
 ```
 
 Each layer is a `bd.Database(source).copy(target)` (or `working_copy()` in
 `lca_helpers.py`). Editing only happens on the deepest working copy.
+
+**Never put "DEALA" in a working database's name.** deala's
+`import_DEALA_activities` deletes every database whose name contains "DEALA"
+(`deala_io.py:367-370`), so `DEALA <db>` disappears the next time the DEALA
+price databases are rebuilt. `working_copy()` refuses such a name.
 
 Before deleting or overwriting a working database, **state the exact name and
 confirm** — `del bd.databases[name]` is irreversible.

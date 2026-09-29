@@ -148,18 +148,33 @@ exchanges re-matches the ones you just added — an added
 `transport, freight train` link matches the `transport, freight train` pattern on
 the next pass. Always `for exc in list(new_activity.exchanges()):`.
 
-Country resolution is **country-first with a GLO fallback**, and a selector that
-returns nothing raises rather than guessing:
+Country resolution is **country-first with a GLO fallback**, matched **exactly**
+on both name and location, and a selector that finds nothing or more than one
+raises rather than guessing. `dh.pick_deala(db, label, country)` is this:
 
 ```python
-def pick_deala(label, country):
-    hits = [a for a in deala_ssp2_npi if label in a["name"] and country in a["location"]]
-    if not hits:
-        hits = [a for a in deala_ssp2_npi if label in a["name"] and "GLO" in a["location"]]
-    if not hits:
-        raise ValueError(f'No DEALA activity for "{label}" ({country} or GLO)')
-    return hits[0]
+def pick_deala(db, label, country):
+    for loc in (country, "GLO"):
+        hits = [a for a in db if a["name"] == label and a["location"] == loc]
+        if len(hits) > 1:
+            raise ValueError(f'{len(hits)} DEALA activities named "{label}" at {loc}; '
+                             "expected exactly one")
+        if hits:
+            return hits[0]
+    raise ValueError(f'No DEALA activity found for "{label}" ({country} or GLO)')
 ```
+
+Why exact, and why raise on two hits even when today's data gives one:
+
+- **Substring matches collide.** DEALA's electricity labels share long
+  prefixes (`Non-household, 20-499 MWh` against `Non-household, 2000-19999
+  MWh`), and a location test like `country in a["location"]` matches any
+  location containing those letters.
+- **`[0]` hides a second hit.** The GLO proxy pattern below *writes* into the
+  same database this selector searches. Once you create activities in the
+  database your own selector reads, a substring-plus-`[0]` selector can start
+  returning your own copy, or the older of two, with no error. A substring +
+  `[0]` transport selector has silently changed a result this way before.
 
 Match the process's country on `'{XX}'` (with braces), not the bare code —
 `'AT'` is a substring of `"at farm"` and will collide.

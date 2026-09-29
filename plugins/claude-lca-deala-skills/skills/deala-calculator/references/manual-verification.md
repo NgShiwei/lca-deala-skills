@@ -39,7 +39,7 @@ Command:
 
 ```bash
 python scripts/verify_cost.py --project <project> \
-   --db "<costed modular db>" \
+   --db "Costed_<modular db>" \
    --activity "DEALA, Cutoff NP, Toy pressing" --country AA
 ```
 
@@ -92,13 +92,13 @@ modelling difference.
 
 ```bash
 python scripts/verify_cost.py --project <project> \
-   --db "<costed modular db>" --all --csv crosscheck.csv
+   --db "Costed_<modular db>" --all --csv crosscheck.csv
 ```
 
 Output shape:
 
 ```
-[read] <n> cut-off activities in '<costed modular db>'
+[read] <n> cut-off activities in 'Costed_<modular db>'
 [cross-check] <n> activities; max abs diff = <~1e-08>; ratio range 1.000000 .. 1.000000
 [worst] <activity name>: manual <x> vs native <x> (ratio 1.000000)
 PASS — every activity's native score reproduces its hand calculation.

@@ -22,7 +22,7 @@ Hard requirements (see the skill's reference docs):
 from __future__ import annotations
 
 import re
-from typing import Iterable, Sequence
+from typing import Callable, Iterable, Sequence
 
 import numpy as np
 import pandas as pd
@@ -352,11 +352,9 @@ def cross_check_all(activities: Sequence, method=COST_METHOD,
 # transport + edge table
 # --------------------------------------------------------------------------
 
-#: LOCKED: land legs <= 800 km go by road, longer legs by rail.
+#: Land legs <= 800 km go by road, longer legs by rail. A modelling choice:
+#: confirm it with the user for a new study.
 RAIL_THRESHOLD_KM = 800
-
-#: Country-specific DEALA freight rates exist only for these; all else -> GLO.
-COUNTRY_RATE_LOCS = {"CN", "DE", "SE"}
 
 MODE_LABELS = {
     "lorry": "transport - transport, freight, lorry >32 metric ton, EURO6, non-hazardous, foreground",
@@ -365,22 +363,54 @@ MODE_LABELS = {
 }
 
 
+def pick_deala(db, label: str, country: str):
+    """The DEALA input activity named ``label`` in ``country``, else its GLO one.
+
+    Matches name AND location EXACTLY and raises unless the match is unique.
+    Never a substring test and never ``[0]``: a substring match on a label can
+    hit a longer label that shares its prefix (the electricity bands do), and
+    a database you have written into yourself (a GLO proxy, say) can hold two
+    activities that a lax selector would silently choose between.
+    """
+    for loc in (country, "GLO"):
+        hits = [a for a in db if a["name"] == label and a["location"] == loc]
+        if len(hits) > 1:
+            raise ValueError(f'{len(hits)} DEALA activities named "{label}" at {loc}; '
+                             "expected exactly one")
+        if hits:
+            return hits[0]
+    raise ValueError(f'No DEALA activity found for "{label}" ({country} or GLO)')
+
+
 def transport_rates(cost_input_db: str = COST_INPUT_DB, method=COST_METHOD,
                     verbose: bool = True) -> dict:
     """``{(mode, location): USD/tkm}`` from the DEALA freight activities.
 
-    Sanity anchors (GLO): lorry ~0.207, train ~0.097, sea ~0.0032 USD/tkm.
+    Scores every location DEALA carries for each of :data:`MODE_LABELS`, so
+    :func:`build_transport_table` uses a country's own rate wherever one exists
+    and GLO everywhere else. Nothing about which countries have rates is
+    hard-coded here.
+
+    Sanity check (GLO): sea should be far cheaper per tonne-km than rail, and
+    rail cheaper than road. If not, something is mis-linked.
     """
     cfg = {"impact_categories": [method]}
     db = bd.Database(cost_input_db)
     fu, meta = {}, {}
     for mode, label in MODE_LABELS.items():
-        for loc in ["GLO", *sorted(COUNTRY_RATE_LOCS)]:
-            hit = [a for a in db if a["name"] == label and a["location"] == loc]
-            if hit:
-                k = f"{mode}|{loc}"
-                fu[k] = {hit[0].id: 1}
-                meta[k] = (mode, loc)
+        by_loc = {}
+        for a in db:
+            if a["name"] == label:
+                by_loc.setdefault(a["location"], []).append(a)
+        if "GLO" not in by_loc:
+            raise ValueError(f'no GLO activity named "{label}" in {cost_input_db}')
+        for loc, hit in sorted(by_loc.items()):
+            if len(hit) > 1:
+                raise ValueError(f'{len(hit)} activities named "{label}" at {loc}; '
+                                 "expected at most one")
+            k = f"{mode}|{loc}"
+            fu[k] = {hit[0].id: 1}
+            meta[k] = (mode, loc)
     data_objs = bd.get_multilca_data_objs(functional_units=fu, method_config=cfg)
     mlca = bc.MultiLCA(demands=fu, method_config=cfg, data_objs=data_objs, use_distributions=False)
     mlca.lci()
@@ -394,51 +424,84 @@ def transport_rates(cost_input_db: str = COST_INPUT_DB, method=COST_METHOD,
     return rates
 
 
-def build_transport_table(rates: dict, seadistance_csv: str, countries: Sequence[str],
-                          iso2_to_iso3: dict) -> pd.DataFrame:
-    """Per-country-pair transport cost in **USD/kg**.
+def iso2_to_iso3_map(countries: Sequence[str]) -> dict:
+    """``{ISO2: ISO3}`` for ``countries``, via ``country_converter``.
 
-    ``iso2_to_iso3`` maps each ISO2 code in ``countries`` to the ISO3 code used
-    in the distance CSV. It decides which pairs are built: the CSV is filtered
-    to pairs whose both ends are in the map.
+    Raises on any code it cannot convert, rather than dropping it: a country
+    missing from the map is a country whose transport pairs are never built.
+    """
+    import country_converter as coco
+
+    out, bad = {}, []
+    for c in countries:
+        # not_found=None would echo the input back; a sentinel cannot be mistaken
+        iso3 = coco.convert(c, src="ISO2", to="ISO3", not_found="<not found>")
+        if not isinstance(iso3, str) or len(iso3) != 3 or not iso3.isalpha():
+            bad.append(c)
+        else:
+            out[c] = iso3
+    if bad:
+        raise ValueError(f"country_converter cannot map {bad} to ISO3; pass iso2_to_iso3 explicitly")
+    return out
+
+
+def build_transport_table(rates: dict, seadistance_csv, countries: Sequence[str],
+                          iso2_to_iso3: dict | None = None) -> pd.DataFrame:
+    """Per-country-pair transport cost in **USD/kg**, for every pair of ``countries``.
+
+    ``iso2_to_iso3`` maps each ISO2 code to the ISO3 code the distance CSV uses.
+    Omit it to derive it with ``country_converter``. Every country must be in
+    the map and every cross-country pair in the CSV, or this raises naming the
+    gap: a missing pair would otherwise surface later as a missing edge.
 
     Route model: ``short == 1`` (neighbours) -> road only over ``roaddistance``;
     otherwise three legs, origin capital -> origin port (``capitalport1``), sea
     (``seadistance``), destination port -> destination capital (``capitalport2``).
     Land legs are priced by :data:`RAIL_THRESHOLD_KM`; the first two legs use
-    origin-keyed rates, the last leg destination-keyed.  Built per tonne, then
-    divided by 1000 to match the per-kg emission table.  Same-country = 0.
+    the origin's rate, the last leg the destination's, each falling back to GLO
+    when ``rates`` has no ``(mode, country)`` entry. Built per tonne, then
+    divided by 1000 to match the per-kg emission table. Same-country = 0.
     """
-    def land_rate(dist_km, iso2):
-        mode = "lorry" if dist_km <= RAIL_THRESHOLD_KM else "train"
-        return rates[(mode, iso2 if iso2 in COUNTRY_RATE_LOCS else "GLO")]
+    countries = list(countries)
+    if iso2_to_iso3 is None:
+        iso2_to_iso3 = iso2_to_iso3_map(countries)
+    unmapped = [c for c in countries if c not in iso2_to_iso3]
+    if unmapped:
+        raise ValueError(f"no ISO3 code for {unmapped} in iso2_to_iso3")
+    iso3_to_iso2 = {iso2_to_iso3[c]: c for c in countries}
 
-    def sea_rate(iso2):
-        return rates[("sea", iso2 if iso2 in COUNTRY_RATE_LOCS else "GLO")]
+    def rate(mode, iso2):
+        return rates[(mode, iso2)] if (mode, iso2) in rates else rates[(mode, "GLO")]
+
+    def land_rate(dist_km, iso2):
+        return rate("lorry" if dist_km <= RAIL_THRESHOLD_KM else "train", iso2)
 
     def num(x):
         return 0.0 if pd.isna(x) else float(x)
 
-    ISO3_TO_ISO2 = {v: k for k, v in iso2_to_iso3.items()}
     sea_df = pd.read_csv(seadistance_csv, encoding="utf-8-sig")
-    sea_df = sea_df[sea_df["isoA"].isin(ISO3_TO_ISO2) & sea_df["isoB"].isin(ISO3_TO_ISO2)].copy()
+    sea_df = sea_df[sea_df["isoA"].isin(iso3_to_iso2) & sea_df["isoB"].isin(iso3_to_iso2)].copy()
 
     def pair_cost(r):
-        o, d = ISO3_TO_ISO2[r["isoA"]], ISO3_TO_ISO2[r["isoB"]]
+        o, d = iso3_to_iso2[r["isoA"]], iso3_to_iso2[r["isoB"]]
         if o == d:
             return 0.0
         if int(num(r["short"])) == 1:
             road = num(r["roaddistance"])
             return road * land_rate(road, o)
         cp1, seadist, cp2 = num(r["capitalport1"]), num(r["seadistance"]), num(r["capitalport2"])
-        return cp1 * land_rate(cp1, o) + seadist * sea_rate(o) + cp2 * land_rate(cp2, d)
+        return cp1 * land_rate(cp1, o) + seadist * rate("sea", o) + cp2 * land_rate(cp2, d)
 
     recs = []
     for _, r in sea_df.iterrows():
-        o, d = ISO3_TO_ISO2[r["isoA"]], ISO3_TO_ISO2[r["isoB"]]
+        o, d = iso3_to_iso2[r["isoA"]], iso3_to_iso2[r["isoB"]]
         recs.append({"helper": f"{o}x{d}", "from_country": o, "to_country": d,
                      "transport_cost": pair_cost(r) / 1000.0, "same_country": o == d})
     have = {(x["from_country"], x["to_country"]) for x in recs}
+    missing = [f"{o}->{d}" for o in countries for d in countries if o != d and (o, d) not in have]
+    if missing:
+        raise ValueError(f"{len(missing)} country pairs have no row in the distance CSV: "
+                         f"{missing[:10]}{' ...' if len(missing) > 10 else ''}")
     for c in countries:
         if (c, c) not in have:
             recs.append({"helper": f"{c}x{c}", "from_country": c, "to_country": c,
@@ -457,6 +520,7 @@ def parse_scale_list(x):
 def build_edge_table(cost_results: pd.DataFrame, transport: pd.DataFrame,
                      scaling_csv, process_order: Sequence[str],
                      countries: Sequence[str], score_col: str = "calculated_cost",
+                     countries_for_step: Callable[[int], Iterable[str]] | None = None,
                      verbose: bool = True) -> pd.DataFrame:
     """Edge-weight table for ``supply-chain-optimizer``.
 
@@ -470,9 +534,26 @@ def build_edge_table(cost_results: pd.DataFrame, transport: pd.DataFrame,
     ``scaling_csv`` is a path or a DataFrame of ``(country, bracketed list)``.
     ``process_order`` is the study's real steps, in order: the scaling list is
     assigned to it by position.
+
+    ``countries_for_step(step)`` (optional) returns the countries able to
+    perform the 1-based ``step``; it is called for steps ``1..N+1``, where
+    ``N+1`` is the pass-through layer. With it, a row for step ``i`` is kept
+    only if its destination can perform step ``i+1``. An edge into a country
+    that cannot take the next step is a dead end, not a route: the graph would
+    prune it anyway, but a table that carries such rows makes any row count
+    meaningless.
+
+    Raises, naming the countries, if any row has no scaling factor or no cost.
+    Such a row would pass a row-count check and then be dropped by the graph
+    builder, which skips NaN weights: the country would vanish from the graph
+    instead of failing.
     """
     have_keys = {"country", "process_base"} <= set(cost_results.columns)
     cr = cost_results.copy() if have_keys else parse_names(cost_results)
+
+    outside = sorted(set(cr["country"]) - set(countries))
+    if outside:
+        raise ValueError(f"cost rows for countries not in `countries`: {outside}")
 
     scal = scaling_csv.copy() if isinstance(scaling_csv, pd.DataFrame) else pd.read_csv(scaling_csv)
     scal.columns = ["country", "scaling_factor_raw"]
@@ -488,11 +569,30 @@ def build_edge_table(cost_results: pd.DataFrame, transport: pd.DataFrame,
     df = df.merge(transport[["helper", "from_country", "to_country", "transport_cost", "same_country"]],
                   left_on="country", right_on="from_country", how="left")
     df = df.loc[df["to_country"].isin(countries)].copy()
+
+    if countries_for_step is not None:
+        next_ok = {p: set(countries_for_step(i + 1))
+                   for i, p in enumerate(process_order, start=1)}
+        unknown = sorted(set(df["process_base"]) - set(next_ok))
+        if unknown:
+            raise ValueError(f"process_base values not in process_order: {unknown}")
+        df = df.loc[[t in next_ok[p] for p, t in zip(df["process_base"], df["to_country"])]].copy()
+
     df[score_col] = np.where(
         df["same_country"],
         df["scale"] * df["process_cost"],
         df["scale"] * (df["process_cost"] + df["transport_cost"]))
+
+    nan_scale = df["scale"].isna()
+    nan_score = df[score_col].isna()
+    if (nan_scale | nan_score).any():
+        bad = df.loc[nan_scale | nan_score]
+        raise ValueError(
+            f"{int(nan_scale.sum())} rows have no scaling factor and "
+            f"{int(nan_score.sum())} have no {score_col}, for countries "
+            f"{sorted(set(bad['country']))} at steps {sorted(set(bad['process_base'].astype(str)))}. "
+            "The graph would drop these edges silently. A missing scale is usually "
+            "a (country, process_base) name mismatch, not missing data.")
     if verbose:
-        print(f"[edges] {len(df)} rows; NaN scale={df['scale'].isna().sum()}, "
-              f"NaN {score_col}={df[score_col].isna().sum()}")
+        print(f"[edges] {len(df)} rows; no NaN in scale or {score_col}")
     return df

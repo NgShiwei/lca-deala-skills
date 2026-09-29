@@ -45,7 +45,7 @@ traverses that link and sums the input's price flow.
 > ends (legacy `bw.LCA`, `deala_io().calculate_total_cost_processes`) are in
 > `references/deala-cost-method.md` — read it before hand-rolling anything.
 
-## Four rules before you compute
+## Five rules before you compute
 
 1. **Check the environment first, and never downgrade scipy.** Run
    `python ../lca-calculator/scripts/check_environment.py` (paths are relative
@@ -78,7 +78,17 @@ traverses that link and sums the input's price flow.
 4. **Never silently pick `[0]`.** A cost mapping is a methodological choice —
    which electricity tier, which gas tier, which labour category, what proxy for
    a country with no price data. When a selector returns 0 or >1 matches, ask.
-   `verify_cost.py` refuses to guess and prints the candidates instead.
+   `verify_cost.py` refuses to guess and prints the candidates instead, and
+   `dh.pick_deala(db, label, country)` matches name and location exactly and
+   raises on zero or two hits.
+
+5. **Never put "DEALA" in a database name.** deala's
+   `import_DEALA_activities` deletes **every** database in the project whose
+   name merely *contains* `"DEALA"` (`deala_io.py:367-370`), not just its own.
+   A working copy called `DEALA <db>` is deleted, without warning, the next
+   time the price databases are rebuilt. Name the cost layer `Costed_<db>`
+   (and never suggest a DEALA-named database to the user).
+   `lca_helpers.working_copy` refuses such a name.
 
 ## The workflow
 
@@ -97,6 +107,8 @@ traverses that link and sums the input's price flow.
    this; see below.
 7. **Transport** — `dh.transport_rates()` → `dh.build_transport_table(...)`.
 8. **Edge table** — `dh.build_edge_table(...)` → a `calculated_cost` column.
+   It raises on any NaN scale or cost, naming the countries; pass
+   `countries_for_step=` when not every country can do every step.
 9. **Graph** — hand off to the `supply-chain-optimizer` skill with
    `score_col="calculated_cost"`.
 
@@ -118,7 +130,7 @@ where each `unit_price` is that DEALA input activity's *own* DEALA-Cost score
 ```bash
 set PYTHONIOENCODING=utf-8
 py verify_cost.py --project <project> \
-   --db "<costed modular db>" \
+   --db "Costed_<modular db>" \
    --activity "<activity name substring>" --country <XX>
 ```
 
@@ -138,8 +150,10 @@ Run it after any injection change, before trusting a path.
 - `scripts/deala_helpers.py` — `check_environment`, `clean`, `parse_names`,
   `find_cutoff_activities`, `score_native`, `price_inputs`, `read_cost_links`,
   `manual_cost`, `verify`, `format_verification`, `cross_check_all`,
-  `transport_rates`, `build_transport_table`, `parse_scale_list`,
-  `build_edge_table`. Prefer these over rewriting the same logic.
+  `pick_deala`, `transport_rates`, `iso2_to_iso3_map`,
+  `build_transport_table`, `parse_scale_list`, `build_edge_table`. Prefer
+  these over rewriting the same logic. The transport and edge-table helpers
+  run without Brightway.
 - `scripts/verify_cost.py` — CLI for the worked example (`--activity`) and the
   regression gate (`--all`).
 - `references/deala-cost-method.md` — the native method, why marketsphere scores

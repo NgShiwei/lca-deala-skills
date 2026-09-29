@@ -55,7 +55,7 @@ Per leg: `tonne_km (= km for 1 tonne) x DEALA_rate(mode, location)`, summed, the
 `/1000` for per-kg. Land mode by leg distance: **road (lorry) <= 800 km, rail
 (train) > 800 km**. Sea = container ship, non-hazardous. Rate location: legs 1-2
 keyed to the **origin** country, leg 3 to the **destination** (country-specific
-DEALA rate only for CN/DE/SE; otherwise GLO). Same-country pair -> 0.
+DEALA rate where DEALA has one; otherwise GLO). Same-country pair -> 0.
 
 (The environmental layer uses a pre-computed per-kg transport-emission table with
 the same from/to shape; only the numbers differ.)
