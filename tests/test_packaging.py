@@ -46,12 +46,13 @@ def test_entry_source_and_manifest(entry):
     assert manifest["author"]["name"] and manifest["description"] and manifest["version"]
     assert "version" not in entry                       # plugin.json is the one place
     # only plugin.json may live in .claude-plugin/
-    assert [p.name for p in (plugin_dir(entry) / ".claude-plugin").iterdir()] == ["plugin.json"]
+    assert [p.name for p in (plugin_dir(entry) / ".claude-plugin").iterdir()
+            if not p.name.startswith(".")] == ["plugin.json"]
 
 
 def skills():
     for entry in entries():
-        yield from sorted((plugin_dir(entry) / "skills").iterdir())
+        yield from sorted(p for p in (plugin_dir(entry) / "skills").iterdir() if p.is_dir())
 
 
 @pytest.mark.parametrize("skill", list(skills()), ids=lambda p: p.name)

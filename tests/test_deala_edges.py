@@ -110,7 +110,7 @@ def test_feasibility_filter_drops_dead_end_rows():
     # step 4 is the pass-through layer.
     can = {1: ["A", "B"], 2: ["A", "B", "C"], 3: ["A", "B"], 4: ["A", "B", "C"]}
     e = edges(countries_for_step=lambda step: can[step])
-    to_c = e[(e.process_base == "Toy process") & (e.to_country == "C")]
+    to_c = e[(e.process_base == "Process") & (e.to_country == "C")]
     assert to_c.empty                      # nobody may ship "process" output to C
     assert len(e) == 6 + 3 * 2 + 3 * 3
     G, s, t = gh.build_layered_graph(e, "calculated_cost", run_toy.PROCESS_ORDER)
@@ -120,6 +120,6 @@ def test_feasibility_filter_drops_dead_end_rows():
 
 def test_feasibility_filter_rejects_unknown_step():
     costs = pd.read_csv(TOY / "process_costs.csv")
-    costs.loc[0, "process_base"] = "Toy mystery"
+    costs.loc[0, "process_base"] = "Mystery step"
     with pytest.raises(ValueError, match="not in process_order"):
         edges(cost_results=costs, countries_for_step=lambda s: run_toy.COUNTRIES)

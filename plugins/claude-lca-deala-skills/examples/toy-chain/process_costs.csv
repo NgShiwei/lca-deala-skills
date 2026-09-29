@@ -1,9 +1,9 @@
 process_name,country,process_base,process_cost
-"Cutoff, Toy grow {A}",A,Toy grow,0.30
-"Cutoff, Toy grow {B}",B,Toy grow,0.25
-"Cutoff, Toy process {A}",A,Toy process,0.50
-"Cutoff, Toy process {B}",B,Toy process,0.60
-"Cutoff, Toy process {C}",C,Toy process,0.20
-"Cutoff, Toy finish {A}",A,Toy finish,0.40
-"Cutoff, Toy finish {B}",B,Toy finish,0.45
-"Cutoff, Toy finish {C}",C,Toy finish,0.10
+"Grow {A}",A,Grow,0.30
+"Grow {B}",B,Grow,0.25
+"Process {A}",A,Process,0.50
+"Process {B}",B,Process,0.60
+"Process {C}",C,Process,0.20
+"Finish {A}",A,Finish,0.40
+"Finish {B}",B,Finish,0.45
+"Finish {C}",C,Finish,0.10

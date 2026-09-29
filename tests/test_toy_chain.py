@@ -26,7 +26,7 @@ def test_matches_hand_calculation(result):
 def test_country_without_first_step_cannot_start(result):
     path, _, edges, _ = result
     assert path[1][1] != "C"
-    assert not ((edges.process_base == "Toy grow") & (edges.country == "C")).any()
+    assert not ((edges.process_base == "Grow") & (edges.country == "C")).any()
 
 
 def test_transport_table(result):
@@ -42,7 +42,7 @@ def test_transport_table(result):
 def test_edge_formula(result):
     _, _, edges, _ = result
     e = edges.set_index(["process_base", "country", "to_country"])["calculated_cost"]
-    assert e[("Toy grow", "B", "C")] == pytest.approx(2.2 * (0.25 + 0.116))
-    assert e[("Toy process", "C", "C")] == pytest.approx(1.2 * 0.20)
+    assert e[("Grow", "B", "C")] == pytest.approx(2.2 * (0.25 + 0.116))
+    assert e[("Process", "C", "C")] == pytest.approx(1.2 * 0.20)
     assert len(edges) == 2 * 3 + 3 * 3 + 3 * 3
     assert edges["calculated_cost"].notna().all()
