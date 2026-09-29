@@ -27,8 +27,29 @@ from typing import Iterable, Sequence
 import numpy as np
 import pandas as pd
 
-import bw2data as bd
-import bw2calc as bc
+
+class _NeedsBrightway:
+    """Stand-in for an absent Brightway package.
+
+    The transport and edge-table helpers are plain pandas and run without
+    Brightway (the offline tests and the toy example use them that way). Any
+    scoring helper touches ``bd``/``bc`` and gets this error instead.
+    """
+
+    def __init__(self, name: str):
+        self._name = name
+
+    def __getattr__(self, attr):
+        raise ImportError(
+            f"{self._name} is not installed in {__import__('sys').executable}. "
+            "This helper needs the Brightway 2.5 environment.")
+
+
+try:
+    import bw2data as bd
+    import bw2calc as bc
+except ImportError:
+    bd, bc = _NeedsBrightway("bw2data"), _NeedsBrightway("bw2calc")
 
 # --------------------------------------------------------------------------
 # constants
@@ -420,19 +441,26 @@ def parse_scale_list(x):
 
 
 def build_edge_table(cost_results: pd.DataFrame, transport: pd.DataFrame,
-                     scaling_csv: str, process_order: Sequence[str],
+                     scaling_csv, process_order: Sequence[str],
                      countries: Sequence[str], score_col: str = "calculated_cost",
                      verbose: bool = True) -> pd.DataFrame:
     """Edge-weight table for ``supply-chain-optimizer``.
 
     ``weight = scale × process_cost`` within a country, and
     ``scale × (process_cost + transport_cost)`` across countries — the same
-    formula the environmental notebook applies to GWP, so the two tables are
+    formula the environmental side applies to GWP, so the two tables are
     directly comparable and mergeable.
-    """
-    cr = parse_names(cost_results)
 
-    scal = pd.read_csv(scaling_csv)
+    ``cost_results`` needs ``process_name`` and ``process_cost``; ``country``
+    and ``process_base`` are parsed from the name unless already present.
+    ``scaling_csv`` is a path or a DataFrame of ``(country, bracketed list)``.
+    ``process_order`` is the study's real steps, in order: the scaling list is
+    assigned to it by position.
+    """
+    have_keys = {"country", "process_base"} <= set(cost_results.columns)
+    cr = cost_results.copy() if have_keys else parse_names(cost_results)
+
+    scal = scaling_csv.copy() if isinstance(scaling_csv, pd.DataFrame) else pd.read_csv(scaling_csv)
     scal.columns = ["country", "scaling_factor_raw"]
     scal["scale_list"] = scal["scaling_factor_raw"].apply(parse_scale_list)
     scal = scal.explode("scale_list", ignore_index=True)

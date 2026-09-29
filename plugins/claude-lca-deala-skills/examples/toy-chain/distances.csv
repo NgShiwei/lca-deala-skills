@@ -1,0 +1,7 @@
+isoA,isoB,seadistance,capitalport1,capitalport2,roaddistance,short
+AAA,BBB,,,,600,1
+BBB,AAA,,,,600,1
+AAA,CCC,5000,100,900,,0
+CCC,AAA,5000,900,100,,0
+BBB,CCC,4000,300,200,,0
+CCC,BBB,4000,200,300,,0

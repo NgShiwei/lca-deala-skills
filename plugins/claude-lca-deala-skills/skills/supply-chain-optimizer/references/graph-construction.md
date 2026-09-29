@@ -1,8 +1,9 @@
 # Graph construction reference
 
 The complete recipe for turning per-process, per-country scores into the layered
-DiGraph and solving it. The structure is generic; the worked numbers live in the
-toy example the repository's tests run.
+DiGraph and solving it. The structure is generic. For a complete worked run with
+numbers you can check by hand, see `../../../examples/toy-chain/` (three invented
+countries, three steps, runs offline).
 
 ## 1. The edge table
 
