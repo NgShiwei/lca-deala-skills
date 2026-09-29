@@ -26,7 +26,7 @@ sequential batch run.
 
 **Consumers should copy the builder, not import it across an absolute path.**
 `build_layered_graph` + `solve_shortest_path` are about 60 lines. A
-`sys.path.insert(0, r"C:\...\.claude\skills\...")` in a project script makes that
+`sys.path.insert(0, "/absolute/path/to/.claude/skills/...")` in a project script makes that
 script unrunnable on any other machine and dead the moment the skill is
 uninstalled. Vendor them into the project's own code instead, so the project
 no longer imports this skill at all.

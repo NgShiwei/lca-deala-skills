@@ -73,7 +73,7 @@ delete_by_name_prefix(db, "DEALA, ", dry_run=False)  # then delete
 ### A broken duplicate source (missing production exchange)
 Two activities share a name; one lacks a `production` exchange. Brightway then
 treats its output as 1 unit, so any process built from it scores orders of
-magnitude off (e.g. 221 vs a ~1 median). Diagnose by comparing scores across
+magnitude off (hundreds of times the median of its peers). Diagnose by comparing scores across
 peers, then confirm the culprit:
 
 ```python

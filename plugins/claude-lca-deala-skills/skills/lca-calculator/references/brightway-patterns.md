@@ -4,24 +4,24 @@ Concrete, copy-adaptable snippets. Activity/database names are examples — repl
 with the ones in the user's project. The functions referenced (`fresh_copy`,
 `run_multilca`, …) live in `scripts/lca_helpers.py`.
 
-## 0. Run from the activated conda environment, not just its interpreter
-
-Brightway lives in a conda environment (`env_bw25` on the machine this was built
-on). **Pointing at that environment's `python.exe` is not enough.** `bw2calc`'s
-`.lci()` calls `scipy.sparse.linalg.spsolve`, which delay-loads a DLL out of the
-environment's `Library\bin`. Without the environment on `PATH`, the process dies
-with Windows fatal exception `0xc06d007f` — a hard crash, no Python traceback, no
-line number.
-
-It reads as a data problem, and it is not. Everything *before* the solve works
-fine: imports, iterating a database, creating activities, `process()`. Only
-`.lci()` dies. So the failure lands nowhere near its cause.
-
-Activate the environment, or prepend all of these to `PATH`:
+## 0. Check the environment, from the interpreter that will run the work
 
 ```
-<env>;<env>\Library\bin;<env>\Library\mingw-w64\bin;<env>\Library\usr\bin;<env>\Scripts
+python scripts/check_environment.py
 ```
+
+Run it inside the activated virtual environment, or from a notebook cell on
+that environment's kernel with `%run scripts/check_environment.py` (not
+`!python ...`, which runs whatever `python` the shell finds first). It prints
+`sys.executable`, so you can see which interpreter you are really in, and fails
+with the fix for each problem. Installing the environment is in the
+repository's `SETUP.md`.
+
+**Activate the environment; don't just point at its interpreter.** On Windows,
+running an environment's `python.exe` without activating it can leave its DLL
+folders off `PATH`. Everything works until `.lci()`, which then dies with the
+fatal exception `0xc06d007f`: no Python traceback, no line number, nowhere near
+its cause. `SETUP.md` has the troubleshooting entry.
 
 ## 1. Set up
 

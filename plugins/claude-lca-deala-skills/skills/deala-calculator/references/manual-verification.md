@@ -26,8 +26,8 @@ hard-coded anywhere; the numbers come out of the database.
 
 **Why the division by production.** The functional unit is one reference unit of
 output, matching how the environmental side scores its cut-off activities. If an
-activity produces 3070 kg, its per-kg cost is the summed input cost divided by
-3070. Pick an activity with production ≠ 1 for the worked example, so that term
+activity produces 1000 kg, its per-kg cost is the summed input cost divided by
+1000. Pick an activity with production ≠ 1 for the worked example, so that term
 is exercised.
 
 ## Worked example (illustrative numbers)

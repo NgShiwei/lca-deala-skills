@@ -144,9 +144,14 @@ stuck at the wrong version; either ecoinvent failure in the next section.
 Anaconda's base environment is the usual culprit, or `py -3.11` used after
 activating a venv.
 
-**Check** by running `check_environment.py` from a notebook cell (prefix the
-line with `!`) and reading its first line, `interpreter : ...`. It must point
-inside your `.venv`.
+**Check** from inside the notebook, with `%run` so it runs in the kernel's own
+interpreter (`!python ...` would run whatever `python` the shell finds first):
+
+```
+%run plugins/claude-lca-deala-skills/skills/lca-calculator/scripts/check_environment.py
+```
+
+Its first line, `interpreter : ...`, must point inside your `.venv`.
 
 **Fix.** Register the venv as a kernel and select it in Jupyter:
 
@@ -243,6 +248,24 @@ A score of exactly `0.0` means the characterization factors are not linked to
 your biosphere. If you see `Brightway2Project: Please use
 projects.migrate_project_25`, you are pointed at the wrong project (often
 `default`, after a delete). Don't run that migration.
+
+### Windows: `.lci()` kills Python with `0xc06d007f`
+
+**Symptom.** A hard crash with "Windows fatal exception: code 0xc06d007f" the
+moment a calculation solves. No Python traceback. Imports, iterating a
+database, creating activities and `process()` all work first, so it reads like
+a data problem. It is not.
+
+**Cause.** `bw2calc`'s solve delay-loads a DLL from the environment's own
+library folder, and that folder is only on `PATH` when the environment is
+activated. Running the environment's `python.exe` directly (a conda
+environment is the usual case) skips that.
+
+**Fix.** Activate the environment (`.venv\Scripts\activate`, or
+`conda activate <env>`) before starting Python or Jupyter, instead of calling
+its `python.exe` by full path. For a conda environment that cannot be
+activated, prepend its `Library\bin`, `Library\mingw-w64\bin`,
+`Library\usr\bin` and `Scripts` folders to `PATH`.
 
 ### `SyntaxError: invalid non-printable character U+00A0`
 

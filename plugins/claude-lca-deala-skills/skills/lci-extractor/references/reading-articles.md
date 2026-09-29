@@ -33,7 +33,7 @@ successive ≤20-page windows with a coverage log — not a single call.
 ## 1. Get the span before reading
 
 ```
-py scripts/lci_helpers.py --pageinfo <file.pdf>
+python scripts/lci_helpers.py --pageinfo <file.pdf>
 ```
 
 Prints the page count and the exact windows to read, e.g. for 55 pages:

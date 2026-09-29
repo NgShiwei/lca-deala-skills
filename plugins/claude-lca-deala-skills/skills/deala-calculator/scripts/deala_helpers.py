@@ -1,9 +1,14 @@
 """Reusable helpers for DEALA economic (cost) scoring under Brightway 2.5.
 
-Import-or-copy, the same way ``lca_helpers.py`` works for the environmental side::
+Import-or-copy, the same way ``lca_helpers.py`` works for the environmental side.
+For interactive work, put this folder on the path for the session::
 
-    import sys; sys.path.insert(0, r"C:\\Users\\<you>\\.claude\\skills\\deala-calculator\\scripts")
+    import sys; sys.path.insert(0, "<path to deala-calculator/scripts>")
     import deala_helpers as dh
+
+A project script that must run on other machines should copy the functions it
+needs instead: an absolute path into a skill folder breaks on every other
+machine, and when the skill is uninstalled.
 
 Everything here assumes the **native technosphere** DEALA-Cost method:
 a process links each cost input as ``type='technosphere'`` to an activity in the

@@ -35,8 +35,9 @@ From `seadistance.csv` (ISO3 country pairs), per pair:
   3. destination port → destination capital (`capitalport2`), land
 - **Same country**: 0.
 
-**Land-mode tiering (LOCKED):** a land leg ≤ **800 km** goes by road (lorry
->32 t, EURO6); longer than that, by rail. `RAIL_THRESHOLD_KM = 800`.
+**Land-mode tiering:** a land leg ≤ **800 km** goes by road (lorry >32 t,
+EURO6); longer than that, by rail. `RAIL_THRESHOLD_KM = 800` is the default: a
+modelling choice to confirm with the user, not a fact about the data.
 
 **Rate keying:** legs 1 and 2 use the **origin** country's rate; leg 3 uses the
 **destination** country's. (Only matters when one end has its own DEALA rate.)
@@ -142,10 +143,8 @@ rather than copying, and only when the skill is genuinely present.
 
 or from the shell:
 
-```bash
-py graph_helpers.py --edges calculated_costs_subset.csv \
-   --score-col calculated_cost --process-order process_order.txt \
-   --png costs_network_with_labels.png
+```
+python graph_helpers.py --edges calculated_costs_subset.csv --score-col calculated_cost --process-order process_order.txt --png costs_network_with_labels.png
 ```
 
 Nodes are `(layer, country)` between a generic `START` and a generic `END` sink —

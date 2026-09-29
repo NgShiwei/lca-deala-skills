@@ -76,7 +76,7 @@ any PDF over 10 pages.** Articles + SI routinely exceed 20 pages, so *never assu
 Read covers the document.* See `references/reading-articles.md` for the full strategy.
 
 1. **Get the span, then plan windows.** Run
-   `py scripts/lci_helpers.py --pageinfo <file.pdf>` to get the page count and the
+   `python scripts/lci_helpers.py --pageinfo <file.pdf>` to get the page count and the
    exact `Read(pages="a-b")` windows (1–20, 21–40, …). If the count can't be parsed,
    fall back to reading successive 20-page windows until Read reports an out-of-range
    page. Keep a **coverage log** of ranges read so no page or table is skipped.
@@ -179,8 +179,7 @@ Document any unavoidable background-data proxy rather than forcing the number to
   `pdf_page_count`/`page_windows`. CLI: `--pageinfo <pdf>` (page count + read
   windows), `--selftest`, `--selftest-nested`, `--to-template <src> [dst]`, and
   `--to-nested-template <dst> <src>... [--working-db N] [--burden-free DESC]
-  [--link 'Proc::desc=Child']`. On Windows use the `py` launcher (`python` is often
-  not on PATH).
+  [--link 'Proc::desc=Child']`. On Windows, if `python` is not on your PATH, use the `py` launcher outside a virtual environment; inside an activated one, always `python`.
 - `references/reading-articles.md` — long-PDF windowed reads, coverage logging,
   scanned tables, where in a paper/SI the inventory hides.
 - `references/extraction-guide.md` — field-by-field rules, roles, unit conversions,

@@ -20,11 +20,11 @@ life-cycle inventory into `assets/lci_extraction_template.csv` (two blocks:
   * page_windows(n, size=20)       -> [(start,end), ...]
 
 CLI:
-  py lci_helpers.py --pageinfo <file.pdf>   page count + the <=20-page read windows
-  py lci_helpers.py --selftest              round-trips the bundled example template
-  py lci_helpers.py --selftest-nested       round-trips the bundled nested fixture
-  py lci_helpers.py --to-template <src.csv> [<dst.csv>]   emit calculator template
-  py lci_helpers.py --to-nested-template <dst.csv> <src.csv>...
+  python lci_helpers.py --pageinfo <file.pdf>   page count + the <=20-page read windows
+  python lci_helpers.py --selftest              round-trips the bundled example template
+  python lci_helpers.py --selftest-nested       round-trips the bundled nested fixture
+  python lci_helpers.py --to-template <src.csv> [<dst.csv>]   emit calculator template
+  python lci_helpers.py --to-nested-template <dst.csv> <src.csv>...
         [--working-db NAME] [--burden-free DESC] [--link 'Proc::desc=Child']
         Emits the multi-tier file. REFUSES to write while any ambiguous internal
         link, unconfirmed burden-free row, internal unit mismatch or duplicate
@@ -40,6 +40,7 @@ import io
 import os
 import re
 import sys
+import tempfile
 
 # --------------------------------------------------------------------------- #
 # Template parsing
@@ -991,7 +992,8 @@ def _cmd_selftest_nested():
     here = os.path.dirname(os.path.abspath(__file__))
     example = os.path.normpath(os.path.join(
         here, "..", "assets", "lci_extraction_nested_example.csv"))
-    dst = os.path.normpath(os.path.join(here, "..", "assets", "_selftest_nested.csv"))
+    tmp = tempfile.TemporaryDirectory(prefix="lci_selftest_")
+    dst = os.path.join(tmp.name, "selftest_nested.csv")
     print(f"Nested self-test on: {example}")
 
     blocks = load_extraction_multi(example)
@@ -1041,7 +1043,7 @@ def _cmd_selftest_nested():
     print(f"  written children-first: {order}")
 
     ok = _crosscheck_nested(dst)
-    os.remove(dst)
+    tmp.cleanup()
     print("NESTED SELFTEST PASSED" if ok else "NESTED SELFTEST completed with warnings")
     return 0 if ok else 1
 
@@ -1063,7 +1065,7 @@ def _crosscheck_nested(dst):
             processes = lca_helpers.load_inventory_multi(dst)
         except ImportError as exc:
             print(f"  (Brightway not importable here: {exc}; "
-                  f"run --selftest-nested inside env_bw25 for the full check)")
+                  f"run --selftest-nested in the Brightway environment for the full check)")
             return True
         names = [h["name"] for h, _ in processes]
         assert len(processes) == 3, f"expected 3 processes, got {len(processes)}"
@@ -1098,8 +1100,8 @@ def _cmd_selftest():
     print(f"  validate:  {len(issues)} issue(s) -> {issues if issues else 'none'}")
     assert not issues, f"the bundled example must validate cleanly; got: {issues}"
 
-    dst = os.path.join(here, "..", "assets", "_selftest_calc.csv")
-    dst = os.path.normpath(dst)
+    tmp = tempfile.TemporaryDirectory(prefix="lci_selftest_")
+    dst = os.path.join(tmp.name, "selftest_calc.csv")
     to_new_process_template(example, dst)
     print(f"  to_new_process_template -> {dst}")
 
@@ -1128,7 +1130,7 @@ def _cmd_selftest():
         print("  (lca-calculator scripts not found; skipped cross-loader parse)")
         ok = True
 
-    os.remove(dst)
+    tmp.cleanup()
     print("SELFTEST PASSED" if ok else "SELFTEST completed with warnings")
     return 0 if ok else 1
 

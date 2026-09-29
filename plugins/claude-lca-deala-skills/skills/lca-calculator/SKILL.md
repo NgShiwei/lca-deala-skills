@@ -112,8 +112,8 @@ Detailed, copy-adaptable code for every step is in
 `references/brightway-patterns.md` — read it when you implement. The steps:
 
 0. **Check the environment** — run `python scripts/check_environment.py` in the
-   interpreter that will do the work (the notebook kernel, not just any
-   terminal). Add `--no-deala` for purely environmental work. It prints
+   interpreter that will do the work: in a notebook, `%run
+   scripts/check_environment.py`, which runs in the kernel itself. Add `--no-deala` for purely environmental work. It prints
    `sys.executable` and fails with the fix for each problem: the Brightway 2.5
    pins, `ecoinvent_interface >= 3.1`, `matrix_utils >= 0.6.3`, deala. Don't
    start until it prints `OK`. Installing is in the repository's `SETUP.md`.
@@ -258,8 +258,7 @@ wired up yet" in `references/new-process-template.md`.
   import ecoinvent into a project. See "Licensed data" above.
 - `scripts/query_methods.py` — CLI to list/search available LCIA methods in a
   project (`python query_methods.py --project <p> --version ecoinvent-3.10
-  --contains "global warming"`). On Windows, `python` is often not on PATH — use
-  the `py` launcher instead (`py query_methods.py ...`).
+  --contains "global warming"`). On Windows, if `python` is not on your PATH, use the `py` launcher outside a virtual environment; inside an activated one, always `python`.
 - `references/brightway-patterns.md` — the 10 steps as concrete code.
 - `references/working-databases-and-cleanup.md` — safe working copies, and how
   to recover when a run goes wrong (duplicate accumulation, broken activities

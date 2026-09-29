@@ -139,12 +139,11 @@ cost = Σ(input_amount × unit_price) / production_amount
 where each `unit_price` is that DEALA input activity's *own* DEALA-Cost score
 (it has `production: 1` and a price flow, so scoring it alone returns its price).
 
-```bash
-set PYTHONIOENCODING=utf-8
-py verify_cost.py --project <project> \
-   --db "Costed_<modular db>" \
-   --activity "<activity name substring>" --country <XX>
 ```
+python scripts/verify_cost.py --project <project> --db "Costed_<modular db>" --activity "<activity name substring>" --country <XX>
+```
+
+On Windows, set `PYTHONIOENCODING=utf-8` first: `set PYTHONIOENCODING=utf-8` (cmd) or `$env:PYTHONIOENCODING = "utf-8"` (PowerShell). macOS and Linux need nothing. On Windows, if `python` is not on your PATH, use the `py` launcher outside a virtual environment; inside an activated one, always `python`.
 
 The shape of the worked example this produces — every cost input, its unit
 price, its contribution, the sum, the division by production, and the ratio

@@ -81,7 +81,7 @@ same, **and** it also reprocesses any other edited database — e.g. a GLO gas-p
 proxy written into the DEALA input DB — that a single named `process()` would
 miss. Call it **once**, after the whole injection loop, never per activity.
 
-It writes datapackages (~720 MB here) to `processed/`, **not** to the multi-GB
+It writes datapackages (hundreds of MB for a large project) to `processed/`, **not** to the multi-GB
 `databases.db` SQLite file, so it is fast and safe even on a bloated project.
 
 **Why deala's own examples don't need it:** the legacy demand path

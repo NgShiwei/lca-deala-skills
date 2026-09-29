@@ -5,18 +5,19 @@ prints every term, and compares it to the native ``bc.MultiLCA`` score under
 ``('DEALA-Cost (BEIC 1)', 'total cost', 'TC')``.  A ratio of 1.000000 is the
 evidence that the native method does what the arithmetic says.
 
-Usage (Windows: use the ``py`` launcher; ``python`` is often not on PATH)::
+Usage::
 
-    set PYTHONIOENCODING=utf-8
-    py verify_cost.py --project <project> ^
-        --db "Costed_<modular db>" ^
-        --activity "<activity name substring>" --country <XX>
+    python verify_cost.py --project <project> --db "Costed_<modular db>" --activity "<name substring>" --country <XX>
 
     # regression gate over every cut-off activity
-    py verify_cost.py --project <project> --db "Costed_<modular db>" --all
+    python verify_cost.py --project <project> --db "Costed_<modular db>" --all
 
-Only one Python process may hold the project at a time — kill stray
-``python.exe`` (and shut the Jupyter *server*, not just the tab) first.
+On Windows set PYTHONIOENCODING=utf-8 first (cmd: ``set PYTHONIOENCODING=utf-8``;
+PowerShell: ``$env:PYTHONIOENCODING = "utf-8"``). If ``python`` is not on PATH
+outside a virtual environment, the ``py`` launcher works.
+
+Only one Python process may hold the project at a time — stop other Python
+processes using it (and shut the Jupyter *server*, not just the tab) first.
 """
 
 from __future__ import annotations
