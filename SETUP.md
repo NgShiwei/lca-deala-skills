@@ -83,7 +83,44 @@ It prints `sys.executable` and checks, failing with the fix for each problem:
 
 Add `--no-deala` if you only do environmental work.
 
-## 5. The offline tests
+## 5. ecoinvent: credentials and the database
+
+ecoinvent is licensed, so it is neither in this repository nor on pip. One
+script stores your credentials and installs the database. **Run it yourself, in
+your own terminal**: it asks for your password with `getpass`, which needs a
+real terminal, and your password should never pass through a chat with an
+agent.
+
+```
+python plugins/claude-lca-deala-skills/skills/lca-calculator/scripts/ecoinvent_setup.py --project <project>
+```
+
+1. **Credentials.** If none are stored, it asks for your ecoinvent username
+   (the username, not your email address) and password, and stores them with
+   `ecoinvent_interface.permanent_setting()` in
+   `~/.config/pylca/EcoinventInterface/secrets` (macOS/Linux) or
+   `%LOCALAPPDATA%\pylca\EcoinventInterface\secrets` (Windows): outside any
+   repository, so they cannot be committed by accident. If some are stored, it
+   shows the username and asks whether to use them. `--reprompt` replaces them.
+   `ECOINVENT_USERNAME` / `ECOINVENT_PASSWORD`, or `EI_USERNAME` / `EI_PASSWORD`,
+   in the environment take precedence over the stored ones.
+2. **Project.** `--project` has no default. A project that doesn't exist is
+   created, and the script says so: if you didn't expect that, check the name.
+3. **Import.** If ecoinvent or its biosphere is missing, it offers to download
+   and import both: **about 35 minutes and 1.6 GB, default No.** The release
+   archives are cached, so a repeat import doesn't re-download.
+4. **Verification.** It then asserts that both databases and the IPCC 2021
+   GWP100 method exist.
+
+`--version` (default `3.10`) and `--system-model` (default `cutoff`) choose
+another release. `--check` is read-only: it prints the stored username (never
+the password) and what the project holds; this is what an agent runs to see
+where you are.
+
+Other licensed databases (Agri-footprint, for example) are bring-your-own: this
+release has no importer for them.
+
+## 6. The offline tests
 
 These need no Brightway and no licence, only `pandas`, `networkx` and
 `pytest`, so any Python 3.8+ environment will do:
@@ -117,6 +154,95 @@ inside your `.venv`.
 python -m pip install ipykernel
 python -m ipykernel install --user --name lca-deala --display-name "lca-deala (3.11)"
 ```
+
+### Credentials read as `(none)` right after storing them
+
+**Cause.** Something in a long-running Python session (a notebook kernel, say)
+resolved the credentials when it was first imported, before you stored them.
+Python caches imported modules, so re-running a cell doesn't re-read them.
+`ecoinvent_setup.py` itself resolves them fresh on every run.
+
+**Fix.** Restart the kernel, or `importlib.reload(<module>)`, then check with
+`ecoinvent_setup.py --project <project> --check`.
+
+### `unauthorized_client` / "Client not allowed for direct access grants"
+
+```
+UserWarning: Given credentials can't log in: error 400
+HTTPError: 400 Client Error: Bad Request for url:
+https://sso.ecoinvent.org/realms/ecoinvent/protocol/openid-connect/token
+```
+
+**Not the password**: the credentials are never evaluated.
+`ecoinvent_interface` 3.0 and below use a login client that ecoinvent has since
+disabled. 3.1 fixed it. `bw2io` doesn't declare the package, so an old copy
+already on the machine satisfies it and is never upgraded.
+
+**Fix.** `python -m pip install --upgrade "ecoinvent_interface>=3.1"` in the
+interpreter that runs the import (`check_environment.py` flags this).
+
+If it still fails after the upgrade with `invalid_grant`, the username or
+password really is wrong: use your ecoinvent *username*, not your email, and
+check you can log in at ecoinvent.org without a single-sign-on redirect. A
+federated login has no password this route can use.
+
+### `LCIA method not installed: ('ecoinvent-3.10', ...)`
+
+**Symptom.** The databases exist but the method assert fails.
+
+**Cause.** The import ran under a `bw2io` older than 0.9.17, which installs the
+methods without their `ecoinvent-3.10` namespace. It doesn't self-heal: once
+both databases exist the script skips the import, and the assert fails on every
+re-run.
+
+**Fix, and the trade-off.** After fixing the environment, re-install the
+methods alone, in minutes:
+
+```
+python plugins/claude-lca-deala-skills/skills/lca-calculator/scripts/ecoinvent_setup.py --project <project> --methods-only
+```
+
+But the two databases underneath were still written by the wrong `bw2io`, and
+import behaviour differs beyond method naming. If results must be reproducible,
+delete the project and import again instead.
+
+**Don't use `bd.projects.delete_project(name, delete_dir=True)` for that.** It
+removes the project from the registry *before* it checks the directory, and the
+directory name carries a hash whose length changed between bw2data versions.
+With a project created by an older bw2data, the check then fails on a project
+already de-registered: the data is orphaned on disk and the project is gone
+from `bd.projects`. Delete the directory by hand instead. Restart the kernel
+first, so bw2data releases its SQLite files, then, with `PROJECT` set to the
+project name:
+
+```python
+import bw2data as bd, pathlib, shutil
+PROJECT = "<project>"
+base = pathlib.Path(bd.projects._base_data_dir)
+assert PROJECT not in {p.name for p in bd.projects}, "still registered: delete_project(PROJECT) without delete_dir first"
+cands = [d for d in base.iterdir() if d.is_dir() and d.name.startswith(PROJECT + ".")]
+print("deleting:", [d.name for d in cands])
+for d in cands:
+    shutil.rmtree(d)
+```
+
+**Verify either fix** before any real work. A namespace mismatch is otherwise
+silent, and every score comes back zero:
+
+```python
+import bw2data as bd, bw2calc as bc
+bd.projects.set_current("<project>")
+act = bd.Database("ecoinvent-3.10-cutoff").random()
+lca = bc.LCA({act: 1}, ("ecoinvent-3.10", "IPCC 2021", "climate change",
+                        "global warming potential (GWP100)"))
+lca.lci(); lca.lcia()
+print(act["name"][:60], "->", lca.score)
+```
+
+A score of exactly `0.0` means the characterization factors are not linked to
+your biosphere. If you see `Brightway2Project: Please use
+projects.migrate_project_25`, you are pointed at the wrong project (often
+`default`, after a delete). Don't run that migration.
 
 ### `SyntaxError: invalid non-printable character U+00A0`
 

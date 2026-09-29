@@ -63,6 +63,47 @@ These come first because ignoring them is what wrecks a day of work.
    than a sign it is right. Where no anchor exists (many papers report only
    normalised results), deliver the model explicitly labelled **unvalidated**.
 
+## Licensed data: ecoinvent credentials and databases
+
+ecoinvent (and any other commercial LCI database) is licensed to the user, not
+to you. These rules hold in every skill of this plugin:
+
+1. **Never ask for the ecoinvent password in chat.** Never print, log or write
+   one, and never put one in a file in the project or repository. A password
+   typed into a chat is a password sent to a transcript.
+2. **The user stores credentials in their own terminal.** Tell them to run:
+
+   ```
+   python scripts/ecoinvent_setup.py --project <project>
+   ```
+
+   (path relative to this skill's folder). It asks for the username with
+   `input()` and the password with `getpass`, and stores both with
+   `ecoinvent_interface.permanent_setting()` in a folder outside any
+   repository. Your shell has no terminal for `getpass`; the script refuses to
+   prompt there, so don't try to run the prompt yourself. If credentials are
+   already stored, it shows the username and asks whether to use them;
+   `--reprompt` replaces them. Environment variables `ECOINVENT_USERNAME` /
+   `ECOINVENT_PASSWORD` (or `EI_USERNAME` / `EI_PASSWORD`) also work and take
+   precedence.
+3. **Check afterwards, read-only:** `python scripts/ecoinvent_setup.py
+   --project <project> --check` prints the username (never the password), and
+   whether the databases and the GWP100 method are in the project.
+4. **The import costs about 35 minutes and 1.6 GB.** You may start it yourself
+   (`--import`, which skips the script's own question) only after telling the
+   user that cost and getting a yes. The script imports only if a database is
+   missing, then asserts that both databases and the LCIA method exist.
+   `--version` (default 3.10) and `--system-model` (default cutoff) override
+   the release; `--project` has no default, so ask which project.
+5. **Never read a licensed export whole.** Slice it with pandas (`usecols`,
+   `nrows`, a filter) and read only what the task needs.
+6. **Never commit or share licensed data**, or anything derived from it row
+   for row (a table of ecoinvent exchanges, a copied activity). Aggregated
+   results the user chooses to publish are theirs to decide on.
+
+Only ecoinvent has a setup script. Any other licensed database (Agri-footprint,
+for example) is bring-your-own: the user imports it, and the same rules apply.
+
 ## The workflow
 
 Detailed, copy-adaptable code for every step is in
@@ -210,6 +251,9 @@ wired up yet" in `references/new-process-template.md`.
 - `scripts/check_environment.py` — the shared environment check every
   Brightway skill runs first. Importable: `check(require_deala=...)` returns a
   list of `(problem, fix)` pairs.
+- `scripts/ecoinvent_setup.py` — store ecoinvent credentials (the user's
+  terminal only), `--check` the stored username and databases read-only, and
+  import ecoinvent into a project. See "Licensed data" above.
 - `scripts/query_methods.py` — CLI to list/search available LCIA methods in a
   project (`python query_methods.py --project <p> --version ecoinvent-3.10
   --contains "global warming"`). On Windows, `python` is often not on PATH — use

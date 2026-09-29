@@ -24,6 +24,11 @@ Assumes **Brightway 2.5** (`bw2data` 4.x, `bw2calc` 2.5 `MultiLCA`) with the
 `deala` package's activity databases and the `DEALA-Cost (BEIC 1)` method
 installed.
 
+**Licensed data.** The rules in the `lca-calculator` skill's "Licensed data"
+section apply here too: never ask for the ecoinvent password in chat, the user
+stores credentials in their own terminal, never read a licensed export whole,
+and never commit licensed data or anything derived from it row for row.
+
 ## The one thing that makes this work: link cost inputs as `technosphere`
 
 Every DEALA input activity (electricity, gas, labour, transport, solvent, water)

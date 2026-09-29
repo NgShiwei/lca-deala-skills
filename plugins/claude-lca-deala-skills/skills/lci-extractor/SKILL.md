@@ -21,6 +21,11 @@ exact CSV template the **lca-calculator** skill consumes. Extraction ends at a c
 handoff: linking every flow to a background database and running LCIA is the
 lca-calculator's job, reached via `to_new_process_template()`.
 
+**Licensed data.** The rules in the `lca-calculator` skill's "Licensed data"
+section apply here too: never ask for the ecoinvent password in chat, the user
+stores credentials in their own terminal, never read a licensed export whole,
+and never commit licensed data or anything derived from it row for row.
+
 ## Five integrity principles (read before extracting)
 
 Ignoring these produces an inventory that looks complete and is quietly wrong.
