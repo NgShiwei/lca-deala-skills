@@ -188,7 +188,7 @@ and record what they chose.
 
 | Flow | DEALA activity family | What to ask |
 |---|---|---|
-| Electricity | `electricity - Non-household, <band> MWh` | which consumption band: compute it from the plant's annual use rather than picking one band for every step |
+| Electricity | `electricity - Non-household, <band> MWh` | which consumption band: compute it per step from the plant's annual use ("Electricity: the consumption band" below), not one band for every step |
 | Gas heat | `gas - non-household, <band> GJ` | which band; what proxy for a country DEALA has no gas price for; whether a country's data is sector-based rather than banded |
 | Solvents | `consumables and supplies - solvent, organic` (GLO) | whether one proxy may stand for several solvents |
 | Wastewater | `waste treatment - waste water, industrial` (GLO) | the unit conversion (m³ → kg is a factor of 1000) |
@@ -197,10 +197,10 @@ and record what they chose.
 | Labour | `personnel - <category>` (h) | which category; the rate in h/tonne and its source; hours = rate × production_kg / 1000 |
 
 Some flows have no suitable DEALA activity, or are negligible, and are left
-unpriced: agree that list with the user and state it. Capital,
-land, facility/equipment depreciation and overheads are **deferred pending data**
-— if a user asks for "full cost", say plainly that these are absent rather than
-implying the number is complete.
+unpriced: agree that list with the user and state it. Land and overheads are
+not priced by these helpers at all, and capital only if you add it (see
+"Capital" below). If a user asks for "full cost", list what is absent rather
+than implying the number is complete.
 
 **The GLO proxy pattern.** When a country has no price, build an explicit proxy
 activity rather than letting the fallback pick something arbitrary: copy a
@@ -210,3 +210,126 @@ choice is auditable. Compute the average from the **imported DB exchange
 amounts** (already currency-adjusted), not from raw source JSON, so it is
 consistent with every other DEALA activity. Make it idempotent by deleting any
 existing GLO entry first.
+
+## Prices deala doesn't ship: patch a private copy
+
+deala prices from JSON tables inside its installed package (`files/`). When a
+study needs a price deala lacks, **never edit those files in
+`site-packages`**: the results would then depend on a hand-edited install that
+no other machine has, and `check_environment.py` reports it as modified.
+Copy the tree into the project and patch the copy (`scripts/deala_prices.py`):
+
+```python
+import deala_prices as dp
+
+mirror = dp.mirror_deala_files("deala_mirror")      # rebuilt from scratch each run
+dp.add_price_rows(mirror, rows, elasticity_rows=elast_rows)
+# later: repository_main_path=mirror  (the PARENT of files/, not files/ itself)
+```
+
+- **Rows copy the table's own shape.** Each new row needs the fields in
+  `dp.MATERIAL_FIELDS`; build it from an existing row of the same kind so
+  every field deala reads (`REMIND Region` above all, which drives the GDP
+  projection) is filled the way deala's own rows are. Give new rows a
+  distinctive `Code`: `add_price_rows` removes any earlier row with the same
+  code first, so a re-run replaces instead of duplicating.
+- **Give every new material an elasticity row.** deala matches elasticity on
+  `(Sector, Type, ISO)` and does not reset the value between datasets, so a
+  row matching nothing silently inherits the exponent of whichever dataset
+  matched last. Ask the user what the exponent should be (for a globally traded
+  commodity, 0 is a defensible choice; say why).
+- **The JSON is written as escaped ASCII**, because deala reads it with the
+  machine's locale encoding. UTF-8 names turn into mojibake on some machines.
+- **GDP workbooks.** deala needs one per scenario, matched by file stem, and a
+  pip install does not ship all of them. A missing one fails much later as a
+  bare `KeyError` on the scenario name. `dp.missing_gdp_scenarios(mirror,
+  scenarios)` checks up front; add missing workbooks to the mirror's
+  `files/GDP`.
+
+## The cost year: the user's choice, and not a no-op
+
+`dp.import_price_databases(deala_io_instance, cost_year=..., base_year=...,
+repository_main_path=mirror)` builds deala's priced activity databases from
+the mirror. **`cost_year` and `base_year` have no default: ask the user for
+both.**
+
+- `base_year` is the **currency year**: prices come out in USD of that year.
+- `cost_year` is the **cost horizon**: the year every price is projected to.
+  It is easy to leave at a far-future value by accident, which pairs a future
+  cost against a present-day footprint.
+
+deala projects each dataset from **its own Base Year**, by
+`GDP[region][cost_year] / GDP[region][dataset Base Year]` raised to an
+elasticity. So a cost year equal to the currency year is a no-op only for
+datasets whose own Base Year is that year. Datasets with an earlier Base Year
+(often gas, freight, water) are still projected forward across the gap. Report
+it as a short projection, not a pass-through.
+
+`import_price_databases` also refuses to run while the project holds any other
+database whose name contains "DEALA" (deala would delete it), and rebuilds the
+price databases only when a fingerprint of the mirror and the years changes.
+Don't guard the rebuild with "if the database exists, skip": a corrected price
+in the mirror would then have no effect on anything.
+
+## Electricity: the consumption band
+
+Eurostat prices non-household electricity in seven bands of annual
+consumption (`dp.EUROSTAT_BANDS`, IA to IG), and a large consumer pays less per
+kWh than a small one. One band for every step is wrong whenever the plants
+differ in size, and the band can decide which country wins.
+
+Compute the band per step from that plant's own annual use:
+
+```python
+kwh_per_kg = dp.electricity_per_kg(activity)           # all electricity inputs
+mwh = dp.annual_mwh(kwh_per_kg, capacity_t_per_h, hours_per_year)
+elec_act, record = dp.pick_electricity(deala_db, country, mwh)
+provenance.append(record)
+```
+
+- **Capacity and operating hours are the user's inputs**, per plant. Ask; don't
+  assume. If a step has no capacity of its own (it shares a plant, say), agree
+  the assumption with the user and write it down.
+- `pick_electricity` tries the country's own row in the computed band, then
+  its nearest band that exists (one down, one up, two down, ...), then GLO in
+  the computed band, and raises if none exists. The returned `record` says
+  which one fired. Keep the records as a provenance table and show the user
+  where a fallback fired: a fallback is a fact about the price table, not an
+  error.
+
+## Capital: feed the upfront cost, never an annualised one
+
+deala prices equipment capital through a depreciation flow that spreads the
+capital cost over its lifetime: in deala 1.2.1 that flow scores 1/25 USD per
+USD of capital, i.e. straight-line over 25 years. So:
+
+- **Feed deala the upfront (undepreciated) equipment cost per kg of annual
+  capacity**, multiplied by the activity's production amount:
+  `amount [USD] = upfront_cost / (capacity_t_per_h × 1000 × hours_per_year) × production_kg`.
+- **Never feed a figure that is already spread over the years** (a "USD/kg,
+  depreciated" column from an equipment workbook, say). deala annualises it
+  again, and capital comes out 25 times too small.
+- The depreciation flow is GLO-only and does not vary by country. If capital
+  cost should vary by country, that variation has to come from the amount (a
+  location factor the user supplies and cites); say so in the methods.
+
+Every number here — the equipment cost, the capacity, the hours, any location
+factor — comes from the user. Ask for each, and for its source.
+
+## Allocation is decided per process: ask
+
+When one plant makes several products, whether and how its cost is allocated
+between them is a methodological choice, and it is made **per process**, not
+once for the study:
+
+- Allocate only the steps that are actually multi-output. A single-product
+  step gets no allocation factor.
+- Don't assume one constant ratio even for one kind of step. Where the ratio
+  depends on the activity (its production amount, its region), look it up per
+  activity and **raise on a value you have no ratio for**, rather than falling
+  back to a default.
+- Use the same allocation basis (economic or mass) as the environmental side,
+  or state plainly why they differ.
+
+Put each choice to the user, with the options and what each would change, and
+record the answer next to the code that applies it.

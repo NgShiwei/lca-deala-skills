@@ -94,25 +94,37 @@ traverses that link and sums the input's price flow.
 
 1. **Check the environment** — `dh.check_environment()` (rule 1).
 2. **Select the project** — `bd.projects.set_current(<name>)`.
-3. **Inject cost exchanges** into the modular/cut-off activities:
+3. **Prepare the prices.** If the study needs prices deala doesn't ship,
+   copy deala's data files and patch the copy (`deala_prices.mirror_deala_files`,
+   `add_price_rows`); never edit the installed package. Then build deala's
+   price databases with `deala_prices.import_price_databases(...)`: it has **no
+   default cost year or currency year, so ask the user for both**. See
+   `references/deala-cost-method.md` for what the cost year does to older
+   datasets.
+4. **Inject cost exchanges** into the modular/cut-off activities:
    `type='technosphere'`, `input=<DEALA input activity>`,
    `amount = <physical amount> × <unit conversion>`. Resolve the input activity
    country-first with a GLO fallback. Snapshot exchanges with `list(...)` before
    adding inside the loop, or the newly-added exchanges re-match your patterns.
-   Full mapping pattern in `references/deala-cost-method.md`.
-4. **`dh.clean()`** — once, after the whole injection loop.
-5. **Score natively** — `dh.score_native(activities)`; FU = `{act.id: 1}` → cost
+   Full mapping pattern in `references/deala-cost-method.md`. Electricity:
+   pick the band per step from the plant's annual use with
+   `deala_prices.pick_electricity` (capacity and hours are the user's inputs).
+   Capital, if priced: feed the upfront cost, never an annualised one.
+   Allocation: decided per process, with the user.
+5. **`dh.clean()`** — once, after the whole injection loop.
+6. **Score natively** — `dh.score_native(activities)`; FU = `{act.id: 1}` → cost
    per reference unit (per kg). Scaling factors and transport come later.
-6. **VERIFY BY HAND** — `dh.verify(activity)` or `verify_cost.py`. Do not skip
+7. **VERIFY BY HAND** — `dh.verify(activity)` or `verify_cost.py`. Do not skip
    this; see below.
-7. **Transport** — `dh.transport_rates()` → `dh.build_transport_table(...)`.
-8. **Edge table** — `dh.build_edge_table(...)` → a `calculated_cost` column.
+8. **Transport** — `dh.transport_rates()` → `dh.build_transport_table(...)`.
+9. **Edge table** — `dh.build_edge_table(...)` → a `calculated_cost` column.
    It raises on any NaN scale or cost, naming the countries; pass
    `countries_for_step=` when not every country can do every step.
-9. **Graph** — hand off to the `supply-chain-optimizer` skill with
+10. **Graph** — hand off to the `supply-chain-optimizer` skill with
    `score_col="calculated_cost"`.
 
-Steps 5–8 are wrapped in `scripts/deala_helpers.py`; steps 7–9 are detailed in
+Steps 6–9 are wrapped in `scripts/deala_helpers.py`, step 3 in
+`scripts/deala_prices.py`; steps 8–10 are detailed in
 `references/transport-and-edges.md`.
 
 ## Verify the cost by hand — do this every time
@@ -154,11 +166,16 @@ Run it after any injection change, before trusting a path.
   `build_transport_table`, `parse_scale_list`, `build_edge_table`. Prefer
   these over rewriting the same logic. The transport and edge-table helpers
   run without Brightway.
+- `scripts/deala_prices.py` — `mirror_deala_files`, `add_price_rows`,
+  `missing_gdp_scenarios`, `import_price_databases` (required cost year),
+  `price_fingerprint`, `EUROSTAT_BANDS`, `annual_mwh`, `band_for_consumption`,
+  `electricity_label`, `pick_electricity`, `electricity_per_kg`.
 - `scripts/verify_cost.py` — CLI for the worked example (`--activity`) and the
   regression gate (`--all`).
 - `references/deala-cost-method.md` — the native method, why marketsphere scores
   0, the injection/mapping pattern, `clean()` vs `process()`, the `.A1` history,
-  and the dead ends not to retry.
+  the dead ends not to retry, and the price inputs: patching a private copy,
+  the cost year, electricity bands, capital, allocation.
 - `references/manual-verification.md` — the step-by-step hand calculation, with
   real output.
 - `references/transport-and-edges.md` — multi-leg transport model, land-mode
