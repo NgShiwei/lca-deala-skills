@@ -6,10 +6,13 @@ country lists, process names and database names must never reach this
 repository, including its history. This script scans every tracked and
 untracked (non-ignored) file for them and exits non-zero on any hit.
 
-The forbidden terms are stored only as salted SHA-256 hashes in
-``private_terms.json``, because a plain-text list would itself publish them.
-The guard hashes what it reads and compares hashes. A hit prints the offending
-text from the scanned file (it is already there), never the stored list.
+The forbidden terms are kept as salted SHA-256 hashes in
+``tools/private_terms.json``, which is git-ignored and never leaves the
+maintainer's machine (set ``PRIVATE_TERMS_JSON`` to keep it elsewhere). Even
+hashed, short terms such as numbers could be recovered by brute force, so the
+file is not published. Without it the guard cannot run and says so. A hit
+prints the offending text from the scanned file (it is already there), never
+the stored list.
 
 Four kinds of term:
 
@@ -26,12 +29,14 @@ Usage::
     python tools/check_private_terms.py            # scan the repo, exit 1 on a hit
     python tools/hash_private_terms.py terms.txt   # regenerate private_terms.json
 
-Keep the plain-text term file outside the repository.
+Keep the plain-text term file outside the repository. Run the guard before
+every commit and every release.
 """
 from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -39,7 +44,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
-TERMS_JSON = HERE / "private_terms.json"
+TERMS_JSON = Path(os.environ.get("PRIVATE_TERMS_JSON") or HERE / "private_terms.json")
 
 MAX_NGRAM = 4
 COUNTRYSET_MIN = 10          # smaller sets are too common to be meaningful
@@ -142,6 +147,10 @@ def scan(files=None, terms_path: Path = TERMS_JSON) -> list[str]:
 
 
 def main() -> int:
+    if not TERMS_JSON.is_file():
+        print(f"FAIL: no term list at {TERMS_JSON}. It is kept off the public repository; "
+              "regenerate it with tools/hash_private_terms.py, or set PRIVATE_TERMS_JSON.")
+        return 2
     hits = scan()
     if hits:
         print("\n".join(hits))

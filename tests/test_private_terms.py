@@ -1,12 +1,14 @@
 """The pre-release guard: no private-study terms anywhere in the repository.
 
-The real term list is stored only as hashes (tools/private_terms.json). The
-mechanics are tested here against an invented list, so this file reveals
-nothing about the real one.
+The real term list (hashed, tools/private_terms.json) exists only on the
+maintainer's machine, so the repository scan is skipped anywhere else. The
+mechanics are tested against an invented list, which runs everywhere.
 """
 import json
 import sys
 from pathlib import Path
+
+import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "tools"))
@@ -14,6 +16,8 @@ import check_private_terms as cpt  # noqa: E402
 import hash_private_terms as hpt  # noqa: E402
 
 
+@pytest.mark.skipif(not cpt.TERMS_JSON.is_file(),
+                    reason="private term list not on this machine")
 def test_repository_is_clean():
     hits = cpt.scan()
     assert not hits, "\n".join(hits)

@@ -4,3 +4,21 @@ __pycache__/
 .ipynb_checkpoints/
 .pytest_cache/
 .DS_Store
+
+# The pre-release guard's hashed term list: maintainer's machine only.
+# (tools/check_private_terms.py explains why it is never published.)
+tools/private_terms.json
+*private-terms*
+*private_terms*.txt
+
+# Credentials and local environments
+.env
+.env.*
+.venv/
+venv/
+
+# Licensed data must never be committed: ecoinvent releases and exports,
+# and anything a user parks in a private/ folder.
+*.spold
+*.7z
+private/

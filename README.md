@@ -71,10 +71,26 @@ python -m pytest
 Everything runs offline, with no Brightway and no licence: the graph contract,
 the toy chain, the DEALA edge-table gates and price-file handling, the
 environment check's logic, the ecoinvent credential handling, and the
-lci-extractor self-tests. `tests/test_private_terms.py` also runs
-`tools/check_private_terms.py`, a pre-release guard that fails if any term of
-the private study these skills were extracted from appears in the repository.
-Its term list is stored only as hashes.
+lci-extractor self-tests. `tools/check_private_terms.py` is the maintainer's
+pre-release guard against leaking a private study's data into this repository;
+its term list is kept off the repository, so that one check is skipped in a
+fresh clone.
+
+## Releasing an update
+
+Installed copies update only when the plugin's version changes. For every
+release:
+
+1. Bump `version` in `plugins/claude-lca-deala-skills/.claude-plugin/plugin.json`
+   (`0.1.0` → `0.1.1` for fixes, `0.2.0` for new behaviour). Set it only there,
+   never in `marketplace.json` too.
+2. Run `python -m pytest` and `python tools/check_private_terms.py`; both must
+   pass.
+3. Commit and push. Users get it with
+   `claude plugin update claude-lca-deala-skills@ngshiwei`, or automatically if
+   they turned on auto-update for the `ngshiwei` marketplace in `/plugin`.
+
+A push without a version bump reaches nobody who has already installed.
 
 ## Layout
 

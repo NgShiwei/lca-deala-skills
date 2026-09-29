@@ -45,6 +45,8 @@ def test_entry_source_and_manifest(entry):
     assert set(manifest) <= PLUGIN_FIELDS, set(manifest) - PLUGIN_FIELDS
     assert manifest["author"]["name"] and manifest["description"] and manifest["version"]
     assert "version" not in entry                       # plugin.json is the one place
+    # Installs update only when this changes, so every release bumps it.
+    assert re.fullmatch(r"\d+\.\d+\.\d+", manifest["version"]), manifest["version"]
     # only plugin.json may live in .claude-plugin/
     assert [p.name for p in (plugin_dir(entry) / ".claude-plugin").iterdir()
             if not p.name.startswith(".")] == ["plugin.json"]
