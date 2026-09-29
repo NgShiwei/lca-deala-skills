@@ -68,6 +68,12 @@ These come first because ignoring them is what wrecks a day of work.
 Detailed, copy-adaptable code for every step is in
 `references/brightway-patterns.md` — read it when you implement. The steps:
 
+0. **Check the environment** — run `python scripts/check_environment.py` in the
+   interpreter that will do the work (the notebook kernel, not just any
+   terminal). Add `--no-deala` for purely environmental work. It prints
+   `sys.executable` and fails with the fix for each problem: the Brightway 2.5
+   pins, `ecoinvent_interface >= 3.1`, `matrix_utils >= 0.6.3`, deala. Don't
+   start until it prints `OK`. Installing is in the repository's `SETUP.md`.
 1. **Set up** — import `bw2data as bd`, `bw2calc as bc`, `bw2io as bi`,
    `pandas`, `numpy`; select the project with `bd.projects.set_current(<name>)`;
    list databases with `list(bd.databases)`.
@@ -201,6 +207,9 @@ wired up yet" in `references/new-process-template.md`.
   deliberately not present yet (see above).
 - `assets/new_process_template_nested.csv` — the same format with the block pair
   repeated per process, for a child→parent chain built in one pass.
+- `scripts/check_environment.py` — the shared environment check every
+  Brightway skill runs first. Importable: `check(require_deala=...)` returns a
+  list of `(problem, fix)` pairs.
 - `scripts/query_methods.py` — CLI to list/search available LCIA methods in a
   project (`python query_methods.py --project <p> --version ecoinvent-3.10
   --contains "global warming"`). On Windows, `python` is often not on PATH — use

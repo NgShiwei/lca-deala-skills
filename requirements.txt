@@ -1,0 +1,136 @@
+# ==========================================================================
+# Package list 1 of 2  --  Claude LCA and DEALA agent skills
+# ==========================================================================
+#
+# HOW TO USE THIS FILE
+#
+# 1. Create and activate a Python 3.11 virtual environment (see SETUP.md),
+#    then move into the folder that holds this file. Keep the double quotes:
+#    they stop a space in the path from breaking the command.
+#
+#        cd "<path to claude-lca-deala-skills>"
+#
+# 2. Run this file first:
+#
+#        python -m pip install -r requirements.txt
+#
+# 3. Then run the SECOND file, which must have --no-deps:
+#
+#        python -m pip install --no-deps -r requirements-deala.txt
+#
+# You do not need to change any characters in those commands. `/` and `\` both
+# work on Windows.
+#
+# Do not add `deala` to this file. It belongs in requirements-deala.txt, for the
+# reason explained at the bottom of this file.
+#
+# --------------------------------------------------------------------------
+# Python 3.11.9. Every version below is the one these skills were verified
+# against, on a fresh install. Pinned rather than floored because a Brightway
+# stack is a tightly coupled set and a silent minor bump has broken scoring
+# before.
+#
+# NOT installable from pip:
+#   * ecoinvent 3.10 cutoff + biosphere  (licence; the lca-calculator skill's
+#     scripts/ecoinvent_setup.py downloads it)
+#   * any other licensed database: bring your own.
+# See SETUP.md.
+# ==========================================================================
+
+# --- Brightway 2.5 core ---------------------------------------------------
+# This is Brightway 2.5, NOT Brightway 2. They are different versions of the
+# same package names, so only one can be installed at a time. The skills use
+# 2.5-only features with no legacy equivalent: bd.get_multilca_data_objs(), the
+# 2.5 form of bc.MultiLCA(demands=, method_config=, data_objs=),
+# bi.import_ecoinvent_release(), and the bw_processing datapackage layer.
+bw2data==4.7
+bw2calc==2.5.0
+bw2io==0.9.17
+
+# Not declared by bw2io, which nonetheless imports it at module level in
+# bw2io/ecoinvent.py; it otherwise arrives unpinned via premise, so a stale
+# pre-existing copy silently satisfies the requirement and is never upgraded.
+# A FLOOR, not a pin. 3.0 and below hardcode client_id "apollo-ui", which
+# ecoinvent has since disabled for direct access grants, and the ecoinvent
+# import dies at login with unauthorized_client / "Client not allowed for direct access
+# grants" -- which reads like a wrong password but never evaluates one. 3.1
+# takes client_id from Settings, defaulting to "brightway-ei".
+# Deliberately not `==`: this package authenticates against ecoinvent's live
+# SSO, whose configuration changes outside this repository, so it has to stay
+# free to follow it.
+ecoinvent_interface>=3.1
+
+bw2analyzer==0.11.8
+bw2parameters==1.1.0
+bw_processing==1.0
+peewee==4.1.0
+
+# stats_arrays is an unpinned dependency of bw2data. The verified environment
+# has 1.0, but a fresh install today would pick 2.0. Pinned so a rebuild
+# reproduces earlier results instead of quietly swapping a core package.
+stats_arrays==1.0
+
+# matrix_utils 0.6.3 is the FLOOR, not a preference. 0.6.2 and below build the
+# characterization matrix with `.A1`, which scipy >= 1.13 no longer provides on
+# a csc_matrix, and DEALA-Cost scoring dies at array_mapper.py:78. 0.6.3 is the
+# first release carrying the upstream fix (np.asarray(...).ravel(), "Fix #32",
+# commit 6445e5d). Anything >= 0.6.3 is fine; never drop below it.
+matrix_utils==0.6.3
+
+# bw2calc picks pypardiso up automatically whenever it is importable, and warns
+# "No fast sparse solver found" when it is not, falling back to scipy's spsolve.
+# Nothing in the skills imports it, which is why its absence is easy to miss.
+# It does not change results -- same linear system, same answer to numerical
+# precision -- but scoring every cut-off activity of a multi-country study is
+# thousands of solves, and the solver is where that time goes.
+# Pulls MKL, so budget a few hundred MB.
+pypardiso==0.4.7
+
+# --- scenario / prospective layer -----------------------------------------
+# Install premise plain, as written. NEVER write premise[bw2] -- those square
+# brackets are an "extra" that pins the OLD Brightway 2 packages and would rip
+# out the 2.5 versions listed above.
+premise==2.4.6
+randonneur==0.7.2
+randonneur_data==0.6
+
+# --- scientific stack -----------------------------------------------------
+# numpy stays below 2.0: premise and bw2calc are pinned under it here, and
+# deala declares numpy<1.24.0.
+numpy==1.23.5
+scipy==1.13.1
+pandas==2.3.3
+networkx==3.6.1
+matplotlib==3.10.8
+openpyxl==3.1.5
+tqdm==4.67.3
+
+# --- geography and country codes ------------------------------------------
+country_converter==1.3.2
+geopy==2.4.1
+
+# --- packages that deala imports ------------------------------------------
+# deala is installed with --no-deps, which means pip installs NOTHING on its
+# behalf. So anything deala imports has to be named here instead.
+# constructive_geometries also arrives via premise; plotly arrives from nothing
+# else, and deala fails to import without it.
+constructive_geometries==1.0
+plotly==6.1.1
+
+# ==========================================================================
+# WHY deala IS NOT IN THIS FILE
+#
+# deala 1.2.1 asks for `brightway2` -- the OLD Brightway 2 -- and for
+# premise[bw2], which pins bw2calc==1.8.2 / bw2data==3.6.6 / bw2io==0.8.12.
+# If deala is listed here next to bw2data==4.7, pip searches backwards through
+# old brightway2 releases looking for one that fits, reaches a release that
+# needs `progressbar-ipython`, and crashes inside that package's ancient
+# Python-2 setup.py:
+#
+#     ModuleNotFoundError: No module named 'compat'
+#     error: metadata-generation-failed
+#
+# pip then gives up and installs NOTHING AT ALL. That is why deala is in a
+# separate file, installed with --no-deps. Verified with
+# `pip install --dry-run --ignore-installed`.
+# ==========================================================================

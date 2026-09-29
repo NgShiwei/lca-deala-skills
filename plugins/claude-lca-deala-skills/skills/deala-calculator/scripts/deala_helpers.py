@@ -42,7 +42,7 @@ class _NeedsBrightway:
     def __getattr__(self, attr):
         raise ImportError(
             f"{self._name} is not installed in {__import__('sys').executable}. "
-            "This helper needs the Brightway 2.5 environment.")
+            "This helper needs the Brightway 2.5 environment: see SETUP.md.")
 
 
 try:
@@ -69,15 +69,29 @@ _BASE_EXTRACT = r"Cutoff NP,\s*(.*)"
 _BASE_STRIP = r",?\s*\{[A-Z]{2}\}.*$"
 
 
-def check_environment(verbose: bool = True) -> dict:
-    """Assert the version floor that makes DEALA-Cost scoring work at all.
+def check_environment(verbose: bool = True, require_deala: bool = True) -> dict:
+    """Run the shared environment check and refuse to continue if it fails.
 
-    ``matrix_utils`` < 0.6.3 raises ``AttributeError: 'csc_matrix' object has no
-    attribute 'A1'`` at ``array_mapper.py:78`` for *any* method characterised
-    against the biosphere — which DEALA-Cost is, and GWP is not.  Fix by
-    ``pip install --no-deps "matrix_utils==0.6.3"`` (pinned, so pip cannot jump
-    to 3.x and break the bw2calc 2.5 stack).
+    The check lives in ``lca-calculator/scripts/check_environment.py`` so every
+    Brightway skill runs the same one: interpreter, the Brightway 2.5 pins,
+    ``matrix_utils >= 0.6.3`` (below it DEALA-Cost ``.lci()`` crashes on
+    ``.A1`` at ``array_mapper.py:78``), ``ecoinvent_interface >= 3.1``, and an
+    unmodified deala 1.2.1. Each failure comes with the command that fixes it.
+
+    If this skill was copied without its sibling, only the ``matrix_utils``
+    floor is checked. Returns the installed versions.
     """
+    import sys
+    from pathlib import Path
+
+    shared = Path(__file__).resolve().parents[2] / "lca-calculator" / "scripts"
+    if (shared / "check_environment.py").is_file():
+        sys.path.insert(0, str(shared))
+        import check_environment as ce
+        problems = ce.check(require_deala=require_deala, verbose=verbose)
+        if problems:
+            raise RuntimeError("environment not ready:\n" + "\n".join(
+                f"  - {what}\n    fix: {fix}" for what, fix in problems))
     import matrix_utils
     import scipy
 
@@ -92,7 +106,7 @@ def check_environment(verbose: bool = True) -> dict:
     if parts < (0, 6, 3):
         raise RuntimeError(
             f"matrix_utils {info['matrix_utils']} < 0.6.3 — DEALA-Cost .lci() will "
-            "crash on `.A1`. Run: pip install --no-deps \"matrix_utils==0.6.3\". "
+            "crash on `.A1`. Run: python -m pip install --no-deps \"matrix_utils==0.6.3\". "
             "Do NOT downgrade scipy; GWP scoring is fine as-is."
         )
     if verbose:

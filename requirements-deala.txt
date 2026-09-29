@@ -1,0 +1,78 @@
+# ==========================================================================
+# Package list 2 of 2  --  the economic layer (DEALA)
+# ==========================================================================
+#
+# HOW TO USE THIS FILE
+#
+# Run this AFTER requirements.txt, in the same activated environment, and you
+# MUST include --no-deps:
+#
+#     python -m pip install --no-deps -r requirements-deala.txt
+#
+# Run it from the folder that holds this file.
+#
+# --------------------------------------------------------------------------
+# WHAT --no-deps DOES, AND WHY IT IS NOT OPTIONAL
+#
+# --no-deps tells pip: "install exactly the packages I name here, and do not
+# install anything they claim to need." Without it, pip reads deala's own list,
+# sees it asking for the OLD Brightway 2, and DOWNGRADES the Brightway 2.5
+# packages you installed in step 1. Every skill then stops working.
+#
+# If you think you ran this without --no-deps, check with:
+#     python -m pip list
+# bw2data must read 4.7. If it reads 3.6.6, re-run both install commands in
+# order, starting with requirements.txt.
+#
+# --------------------------------------------------------------------------
+# EXPECTED WARNING -- DO NOT "FIX" IT
+#
+# `python -m pip check` will complain that brightway2 2.4.7 wants
+# bw2calc==1.8.2, bw2data==3.6.6 and bw2io==0.8.12. This is expected. Those old
+# pins are deliberately ignored. Do not act on the warning: installing those
+# versions breaks premise and every Brightway skill.
+#
+# --------------------------------------------------------------------------
+# WHAT WORKS AND WHAT DOES NOT, deala 1.2.1 on Brightway 2.5
+#
+# deala does `import brightway2 as bw` (deala_io.py:7). Under 2.5 that package
+# is a thin name-forwarding shim onto the 2.5 classes -- verified:
+# `bw.Database is bw2data.Database` -> True. 9 of the 10 bw.* names deala uses
+# resolve (bw.Activity is the exception). So deala's SETUP half works:
+#
+#     deala_io(), deala_setup(), import_DEALA_activities(),
+#     create_target_databases()
+#
+# Its SCORING half does NOT. These use the old idiom
+# `bw.calculation_setups['multiLCA'] = {...}` then `bw.MultiLCA('multiLCA')`,
+# which under 2.5 reaches a different class and raises:
+#     TypeError: MultiLCA.__init__() missing 2 required positional arguments:
+#                'method_config' and 'data_objs'
+#
+#     calculate_total_cost_processes()
+#     calculate_total_cost_processes_wo_co_products()
+#     calculate_profit_processes()
+#     calculate_price_based_on_margin()
+#     calculate_impacts_per_activity()   (old bw.LCA(demand) call shape)
+#
+# This is SAFE here because all five are entry points with no internal callers
+# -- nothing inside deala_setup() or import_DEALA_activities() reaches them --
+# and the deala-calculator skill never calls them. Its deala_helpers.py does
+# its own 2.5-native scoring with bd.get_multilca_data_objs() +
+# bc.MultiLCA(demands=, method_config=, data_objs=). Do not try to fix this by
+# installing the old Brightway 2.
+#
+# --------------------------------------------------------------------------
+# Install and LEAVE UNMODIFIED. Hand-editing deala's data files inside
+# site-packages (to add a price, say) makes results depend on invisible
+# filesystem state that no other machine has. Copy deala's files/ tree into
+# the project and patch the COPY instead; the deala-calculator skill does this.
+# If yours was ever hand-edited, reinstall a clean copy:
+#     python -m pip install --force-reinstall --no-deps deala==1.2.1
+# ==========================================================================
+deala==1.2.1
+
+# The name-forwarding shim that deala imports. It must be listed explicitly:
+# with --no-deps, pip installs nothing on deala's behalf, and without this
+# package `import brightway2` fails and deala will not load at all.
+brightway2==2.4.7

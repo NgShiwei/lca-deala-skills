@@ -42,13 +42,19 @@ traverses that link and sums the input's price flow.
 
 ## Four rules before you compute
 
-1. **`matrix_utils >= 0.6.3`, and never downgrade scipy.** Below 0.6.3,
-   DEALA-Cost `.lci()` crashes with `'csc_matrix' object has no attribute 'A1'`
-   at `array_mapper.py:78`. Fix by upgrading the package
-   (`pip install --no-deps "matrix_utils==0.6.3"`), not by patching source or
-   monkeypatching at runtime, and not by downgrading scipy — GWP scoring is fine
-   under scipy 1.13.1 and downgrading breaks the environmental half.
-   `deala_helpers.check_environment()` asserts this and refuses to continue.
+1. **Check the environment first, and never downgrade scipy.** Run
+   `python ../lca-calculator/scripts/check_environment.py` (paths are relative
+   to this skill's folder) in the interpreter that will do the work, or call
+   `dh.check_environment()`, which runs the same check and refuses to continue.
+   It prints the interpreter and checks the Brightway 2.5 pins, deala 1.2.1
+   (unmodified), `ecoinvent_interface >= 3.1` and `matrix_utils >= 0.6.3`, and
+   every failure comes with its fix. The `matrix_utils` floor is the one that
+   bites here: below 0.6.3, DEALA-Cost `.lci()` crashes with
+   `'csc_matrix' object has no attribute 'A1'` at `array_mapper.py:78`. Fix by
+   upgrading the package, not by patching source or monkeypatching at runtime,
+   and not by downgrading scipy — GWP scoring is fine under scipy 1.13.1 and
+   downgrading breaks the environmental half. The install itself is in the
+   repository's `SETUP.md`.
 
 2. **`bd.databases.clean()` after any injection or edit — not a named
    `db.process()`.** Every `.save()` flags its database dirty; a dirty DB has a
@@ -71,7 +77,7 @@ traverses that link and sums the input's price flow.
 
 ## The workflow
 
-1. **Check the environment** — `dh.check_environment()` (version floor above).
+1. **Check the environment** — `dh.check_environment()` (rule 1).
 2. **Select the project** — `bd.projects.set_current(<name>)`.
 3. **Inject cost exchanges** into the modular/cut-off activities:
    `type='technosphere'`, `input=<DEALA input activity>`,

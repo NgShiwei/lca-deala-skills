@@ -109,16 +109,15 @@ environmental half to fix the economic one.
 (`np.asarray(...).ravel()`, upstream commit `6445e5d`, "Fix #32") first shipped in
 `matrix_utils` **0.6.3**; the environment had 0.6.2.
 
-```bash
-pip install --no-deps "matrix_utils==0.6.3"
-```
-
-Pinned `==` with `--no-deps` deliberately: `bw2calc` 2.5.0 requires only
-`matrix_utils>=0.6` with no upper bound, so an unbounded upgrade could jump to
-3.x and break the pinned bw2calc 2.5 stack. Earlier interim workarounds — a
-runtime monkeypatch of `ArrayMapper.map_array`, and a hand-edit of the library
-source — are both **superseded and removed**; if you find either in old code,
-delete it. `deala_helpers.check_environment()` enforces the floor.
+0.6.3 is a **floor**, not a preference: anything at or above it carries the
+fix. `requirements.txt` pins exactly 0.6.3 because that is the verified
+environment; `check_environment.py` enforces only the floor. Install from the
+requirements files rather than upgrading this one package on its own, because
+`bw2calc` 2.5.0 requires only `matrix_utils>=0.6` with no upper bound, and an
+unbounded upgrade could jump to a major version the pinned stack was never run
+with. Earlier interim workarounds — a runtime monkeypatch of
+`ArrayMapper.map_array`, and a hand-edit of the library source — are both
+**superseded and removed**; if you find either in old code, delete it.
 
 Note `matrix_utils` is a **bw25** dependency (pulled by `bw2calc`), not a
 `deala`/`brightway2` one. Deala's constraint that actually pins an old library is
