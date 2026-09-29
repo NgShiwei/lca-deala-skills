@@ -1,0 +1,60 @@
+# Inventory template for a brand-new process. Two labelled blocks: [HEADER] (one
+# value row) and [EXCHANGES] (one row per input/output). Lines starting with '#' and
+# blank lines are ignored. Load it with lca_helpers.load_inventory_csv(path), which
+# returns (header, exchanges) ready for build_process.
+#
+# HEADER fields: name = the activity's identity; reference_product = what it produces;
+# output_quantity + output_unit = the production exchange (mandatory & explicit, else
+# Brightway treats output as 1 unit); location = ISO2 / GLO / RoW -- a REAL geography
+# code, because Brightway eval()s this string when processing the database, so
+# descriptive text like "India (Case A) / VN proxy" raises a SyntaxError (put the prose
+# in comment); working_database = where to create it (NEVER a reference database);
+# allocation = none|economic|mass (only if there are co-products).
+#
+# The remaining header fields are DOCUMENTATION required by ISO 14040/14044 and the
+# ILCD handbook. They do not change the calculated result, but without them the record
+# cannot be audited or reused, and every one of them is a question the user is the only
+# person who can answer -- so ask, don't invent:
+#   allocation_justification = WHY that allocation (ISO 14044 4.3.4 wants the reason,
+#     not just the method; 'none' is itself a choice that needs a reason)
+#   system_boundary          = e.g. cradle-to-gate, attributional (4.2.3.3)
+#   cutoff_rules             = criteria for excluding inputs/outputs, incl. any flow
+#     treated as burden-free (4.2.3.3.3)
+#   technology_coverage      = which technology the data represents (4.2.3.6)
+#   reference_year           = temporal coverage of the data (4.2.3.6)
+#   data_source              = bibliographic reference / DOI, as its own field rather
+#     than buried in comment
+#   comment                  = anything else worth carrying
+[HEADER]
+name,reference_product,output_quantity,output_unit,location,working_database,allocation,allocation_justification,system_boundary,cutoff_rules,technology_coverage,reference_year,data_source,comment
+Sawn softwood at sawmill {AT},sawn softwood,1,kg,AT,LCA_working,none,single reference product; co-product wood chips handled by substitution,cradle-to-gate (attributional),"inputs <1% mass excluded; packaging excluded",band-saw line with kiln drying,2024,internal mill survey v2,mill inventory
+#
+# EXCHANGES: add AS MANY rows as needed for any role (several materials, energy
+# carriers, transport legs, emissions, outputs). role = material | energy | transport
+# | emission | coproduct | waste. Any ADDITIONAL outputs beyond the reference product
+# are 'coproduct' rows (link_name = the market activity the co-product displaces);
+# co-products make the process multifunctional, so the calculator PAUSES to ask how to
+# handle them (substitution vs allocation). 'waste' links a treatment activity whose
+# amount is usually NEGATIVE in ecoinvent -- confirm the sign. For emission rows, put
+# the biosphere database in source_db and the compartment (air / water / soil / natural
+# resource) in location. factor is optional: multiplies quantity to match the linked
+# activity's unit (e.g. 1000 for m3 -> kg). Leave it blank to default to 1.
+#
+# link_rationale records WHY this background activity was chosen -- the single most
+# valuable field for anyone auditing the record later. Fill it whenever the link was a
+# judgement call rather than an exact match: a renamed flow across ecoinvent versions,
+# a geography swap (requested GLO but only RoW exists), a haul/size class picked for a
+# transport market, a multi-output activity where a specific reference product had to
+# be selected, or a proxy standing in for missing data. If the link was confirmed with
+# the user, say so and date it. A clean-looking link with no rationale is exactly the
+# kind of choice that turns out to be wrong six months later.
+[EXCHANGES]
+role,description,quantity,unit,link_name,source_db,location,factor,link_rationale
+material,softwood roundwood,1.9,kg,market for round wood softwood,ecoinvent-3.10-cutoff,RER,,closest match to supplier spec
+material,water added,0.5,kg,market for tap water,ecoinvent-3.10-cutoff,GLO,,
+energy,grid electricity,0.12,kWh,market for electricity low voltage,ecoinvent-3.10-cutoff,AT,,mill is grid-connected; AT is the production site
+energy,kiln heat natural gas,1.2,MJ,heat production natural gas,ecoinvent-3.10-cutoff,GLO,,
+transport,truck inbound,0.41,tkm,market for transport freight lorry >32,ecoinvent-3.10-cutoff,GLO,,">32 t class chosen for bulk inbound; confirmed with user on <date>"
+transport,rail inbound,0.08,tkm,market for transport freight train,ecoinvent-3.10-cutoff,GLO,,
+emission,direct methane,0.002,kg,Methane non-fossil,ecoinvent-3.10-biosphere,air,,"unspecified 'air' subcompartment: no stated release height"
+coproduct,wood chips (displaces market chips),0.6,kg,market for wood chips wet measured as dry mass,ecoinvent-3.10-cutoff,RER,,displaced market for substitution

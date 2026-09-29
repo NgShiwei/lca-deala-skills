@@ -1,0 +1,77 @@
+# Life-cycle inventory (LCI) extracted from a scientific article.
+# Two labelled blocks: [METADATA] (one value row describing the study) and
+# [EXCHANGES] (one row per foreground input/output). Lines starting with '#' and
+# blank lines are ignored. Load with lci_helpers.load_extraction(path).
+#
+# EVERY value must be traceable: source_location says exactly where in the paper it
+# came from (e.g. "Table 3", "SI Table S2 row 4", "p.7 para 2"). Never invent a
+# number that is not stated. If the paper does not give it, leave it blank and note
+# the gap -- do not guess.
+#
+# METADATA fields:
+#   title              = article title
+#   process_name       = OPTIONAL. What to CALL this unit process. Required in a
+#                        MULTI-TIER study, where each tier is its own process and a
+#                        child is linked BY NAME -- `title` is the article, so every
+#                        tier would collide on it. See
+#                        assets/lci_extraction_nested_example.csv.
+#   reference          = DOI or full citation
+#   functional_unit    = the study's FU verbatim (e.g. "1 kg protein isolate")
+#   reference_flow     = the physical flow that delivers the FU + its amount/unit
+#   system_boundary    = cradle-to-gate / cradle-to-grave / gate-to-gate ...
+#   geography          = country/region the study models (ISO2 / GLO / RoW / name)
+#   reference_year     = data/year the inventory represents
+#   allocation         = none | economic | mass | substitution (as stated by paper)
+#   background_database = LCI database the paper used (e.g. ecoinvent 3.8 cutoff)
+#   The next four are OPTIONAL ISO 14040/44 + ILCD documentation fields. They are
+#   carried through to the calculator's [HEADER] PER PROCESS, because tiers of one
+#   study legitimately differ (a lab-scale child routinely has a different
+#   reference_year, technology_coverage and data_source from its commercial parent).
+#   Fill them from the paper; leave blank rather than inventing -- the emitter reports
+#   every blank one so it can be asked about, and blank never blocks the handoff.
+#   allocation_justification = WHY that allocation (ISO 14044 4.3.4 wants the reason)
+#   cutoff_rules        = exclusion criteria, incl. any flow treated as burden-free
+#   technology_coverage = which technology the data represents
+#   data_source         = bibliographic reference for THIS process's data, if it
+#                         differs from `reference` (e.g. a specific SI table)
+#   reported_result    = the paper's own headline LCIA result, if any, for cross-check
+#                        (e.g. "3.2 kg CO2-eq/kg, IPCC GWP100") -- verbatim, with method
+#   notes              = anything needed to interpret the inventory
+[METADATA]
+title,reference,functional_unit,reference_flow,system_boundary,geography,reference_year,allocation,background_database,reported_result,notes
+Example: GWP of fired clay bricks,10.1000/example,1 kg fired clay brick (dry basis),1 kg brick,cradle-to-gate,DE,2019,economic,ecoinvent 3.8 cutoff,0.25 kg CO2-eq/kg (IPCC GWP100),transcribed for skill self-test
+#
+# EXCHANGES: one row per foreground input/output.
+#   role            = material | energy | transport | emission | coproduct | waste
+#                     (same roles the lca-calculator new_process_template uses)
+#   description     = plain-language label of the flow as named in the paper
+#   quantity        = amount ALREADY NORMALISED to one functional unit
+#   unit            = unit of `quantity`
+#   original_quantity = the number exactly as printed in the paper (pre-normalisation)
+#   original_unit   = unit as printed in the paper
+#   per_fu_basis    = what the original number was per (e.g. "per batch 500 kg",
+#                     "per ha", "per 1 t") -- the basis used to normalise to the FU
+#   source_location = precise citation inside the paper/SI (Table/row/page)
+#   data_type       = foreground | background | characterized
+#                     foreground   = a primary inventory flow measured/modelled by the study
+#                     background   = the study pulled it from an LCI database (still an inventory flow)
+#                     characterized = an IMPACT result (kg CO2-eq etc.), NOT an inventory flow --
+#                                     kept only for the cross-check; dropped before handoff
+#   link_name       = OPTIONAL suggested background activity to link to (leave blank
+#                     if unsure; the lca-calculator's resolve_links does the real linking)
+#   source_db       = OPTIONAL suggested database for link_name
+#   location        = OPTIONAL preferred link geography, or emission compartment
+#                     (air / water / soil) for emission rows
+#   factor          = OPTIONAL unit-conversion multiplier for the link (e.g. 1000 m3->kg)
+#   notes           = assumptions, ambiguities, sign conventions
+[EXCHANGES]
+role,description,quantity,unit,original_quantity,original_unit,per_fu_basis,source_location,data_type,link_name,source_db,location,factor,notes
+material,clay,1.6,kg,800,kg,per batch 500 kg bricks,Table 2,foreground,market for clay,ecoinvent-3.8-cutoff,RoW,,mass of raw clay per kg product
+material,tap water,0.3,kg,150,kg,per batch 500 kg bricks,Table 2,foreground,market for tap water,ecoinvent-3.8-cutoff,Europe without Switzerland,,process water
+energy,grid electricity,0.12,kWh,60,kWh,per batch 500 kg bricks,Table 2,foreground,market for electricity low voltage,ecoinvent-3.8-cutoff,DE,,
+energy,natural gas kiln heat,2.5,MJ,1250,MJ,per batch 500 kg bricks,Table 2,foreground,heat production natural gas,ecoinvent-3.8-cutoff,RoW,,kiln firing
+transport,truck inbound clay,0.4,tkm,200,tkm,per batch 500 kg bricks,Table 3,foreground,market for transport freight lorry >32 metric ton,ecoinvent-3.8-cutoff,GLO,,
+emission,direct CO2 from heat,0.14,kg,70,kg,per batch 500 kg bricks,Table 4,foreground,Carbon dioxide fossil,ecoinvent-3.8-biosphere,air,,combustion emission
+coproduct,brick fragments sold as aggregate,0.05,kg,25,kg,per batch 500 kg bricks,Table 2,foreground,market for gravel crushed,ecoinvent-3.8-cutoff,RoW,,economic allocation per paper
+waste,wastewater treated,-0.3,kg,-150,kg,per batch 500 kg bricks,Table 4,foreground,treatment of wastewater average,ecoinvent-3.8-cutoff,RoW,,negative amount = treatment activity
+characterized,reported GWP total,0.25,kg CO2-eq,0.25,kg CO2-eq,per 1 kg brick,Table 5,characterized,,,,,paper headline result for cross-check only; dropped on handoff

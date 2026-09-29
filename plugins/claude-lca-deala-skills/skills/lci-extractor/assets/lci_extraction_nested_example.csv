@@ -1,0 +1,42 @@
+# MULTI-PROCESS extraction: one paper's whole chain in one file. Repeat the
+# [METADATA] + [EXCHANGES] pair once per unit process. Load with
+# lci_helpers.load_extraction_multi(path); emit the calculator's nested file with
+# to_nested_template(). Order does not matter.
+#
+# Column meanings are identical to assets/lci_extraction_template.csv. The extra
+# METADATA fields used here are all OPTIONAL and all per-process:
+#   process_name           = what to CALL this process. In a nested file a child is
+#                            linked BY NAME, so every process needs a distinct one --
+#                            `title` is the article and would collide across tiers.
+#   allocation_justification / cutoff_rules / technology_coverage / data_source
+#                          = the ISO 14040/44 + ILCD documentation fields, carried per
+#                            process because tiers legitimately differ (a lab-scale
+#                            child has a different reference_year and technology
+#                            coverage from its commercial parent).
+#
+# This is the fixture behind `--selftest-nested`. It deliberately contains three
+# things the emitter must handle rather than guess:
+#   1. tier 2's reference_flow is in GRAMS while its parent consumes kilograms
+#      (the 1000x basis bug),
+#   2. a burden-free feedstock that must become its own zero-input process,
+#   3. a prose geography that Brightway would refuse to eval().
+#
+# ---------------------------------------------------------------------------------
+# TIER 1 (parent): the process the functional unit refers to.
+[METADATA]
+process_name,title,reference,functional_unit,reference_flow,system_boundary,geography,reference_year,allocation,allocation_justification,cutoff_rules,technology_coverage,background_database,data_source,reported_result,notes
+Demo composite panel production,Example: demo composite panel,10.1000/demo,1 kg demo composite panel,1 kg demo composite panel,cradle-to-gate,SG,2021,none,single reference product,inputs <1% mass excluded; capital goods excluded,pilot hot-press line,ecoinvent 3.10 cutoff,"Demo et al. (2021), doi:10.1000/demo Table 1",,fixture for the nested self-test
+[EXCHANGES]
+role,description,quantity,unit,original_quantity,original_unit,per_fu_basis,source_location,data_type,link_name,source_db,location,factor,notes
+material,demo binder,0.5,kg,50,kg,per 100 kg panel,Table 1,foreground,,,,,foreground sub-process -- produced in tier 2 of this same study
+energy,grid electricity,2.0,kWh,200,kWh,per 100 kg panel,Table 1,foreground,market for electricity low voltage,ecoinvent-3.10-cutoff,SG,,
+#
+# ---------------------------------------------------------------------------------
+# TIER 2 (child): laboratory basis, reported per 0.64 g of product.
+[METADATA]
+process_name,title,reference,functional_unit,reference_flow,system_boundary,geography,reference_year,allocation,allocation_justification,cutoff_rules,technology_coverage,background_database,data_source,reported_result,notes
+Demo binder production,Example: demo composite panel,10.1000/demo,1 kg demo binder,0.64 g demo binder,cradle-to-gate,India (Case A) / VN proxy,2019,none,single reference product,feedstock taken burden-free under cut-off,bench-scale laboratory synthesis,ecoinvent 3.10 cutoff,"Demo et al. (2021), doi:10.1000/demo Table 3",,lab-scale tier; native basis 0.64 g as printed
+[EXCHANGES]
+role,description,quantity,unit,original_quantity,original_unit,per_fu_basis,source_location,data_type,link_name,source_db,location,factor,notes
+material,demo waste shell,3.0,kg,3.0,kg,per 0.64 g binder,Table 3,foreground,,,,,waste feedstock taken burden-free under cut-off
+material,hydrochloric acid,0.1,kg,0.1,kg,per 0.64 g binder,Table 3,foreground,market for hydrochloric acid without water in 30% solution state,ecoinvent-3.10-cutoff,RoW,,

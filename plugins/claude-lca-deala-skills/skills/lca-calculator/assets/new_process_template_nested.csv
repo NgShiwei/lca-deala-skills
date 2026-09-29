@@ -1,0 +1,66 @@
+# NESTED / MULTI-TIER inventory template: several child processes plus the parent
+# that consumes them, in ONE file. Repeat the [HEADER] + [EXCHANGES] pair once per
+# process. Load with lca_helpers.load_inventory_multi(path) -> [(header, exchanges), ...],
+# dry-run with resolve_chain(processes, working_db), then build with
+# build_chain(processes, working_db, background_resolved).
+#
+# Column meanings are identical to assets/new_process_template.csv -- see that file
+# for the full field-by-field explanation. Only the multi-process rules are below.
+#
+# HOW A CHILD IS LINKED TO ITS PARENT
+#   Set source_db to the WORKING DATABASE name (the same value as working_database),
+#   and put the child's exact `name` in link_name. That marks the row as an internal
+#   foreground link instead of a background ecoinvent lookup. Leave location blank.
+#   Example: the parent's chitosan row below points at the "Chitosan production"
+#   process defined further down this same file.
+#
+# ORDER IN THE FILE DOES NOT MATTER. build_chain reads the links, sorts children
+# before parents itself, and refuses to start on a circular dependency, a duplicated
+# process name, or an internal link that matches no process. You do not have to hand
+# order the tiers -- put them in whatever order reads most clearly.
+#
+# BURDEN-FREE FEEDSTOCKS (waste / by-product entering the system free under cut-off)
+#   Give them their own [HEADER] with an [EXCHANGES] block that has the column row
+#   and NO data rows. That builds an activity with a production exchange and no
+#   inputs, which scores zero. Do NOT delete the row from the parent instead --
+#   dropping it hides the cut-off assumption and breaks the mass balance.
+#   See "Waste shell feedstock" below.
+#
+# EVERY process needs its own documentation fields filled in. They can differ between
+# tiers (a lab-scale child often has a different reference_year, technology_coverage
+# and data_source from its commercial parent) -- that is exactly why they are per
+# process rather than per file.
+#
+# ---------------------------------------------------------------------------------
+# TIER 3 (deepest child): burden-free feedstock -- no inputs, no burden.
+[HEADER]
+name,reference_product,output_quantity,output_unit,location,working_database,allocation,allocation_justification,system_boundary,cutoff_rules,technology_coverage,reference_year,data_source,comment
+Waste shell feedstock,1 kg waste shell,1,kg,GLO,LCA_working,none,single output; no burden to allocate,cradle-to-gate (attributional),"burden-free under cut-off: waste from an upstream system that already bears its impacts",waste stream collected at processing site,2020,"Author et al. (2021), doi:10.xxxx/yyyy Table 3",zero-input child -- production exchange only
+[EXCHANGES]
+role,description,quantity,unit,link_name,source_db,location,factor,link_rationale
+#
+# ---------------------------------------------------------------------------------
+# TIER 2 (middle child): consumes the burden-free feedstock, produces an intermediate.
+[HEADER]
+name,reference_product,output_quantity,output_unit,location,working_database,allocation,allocation_justification,system_boundary,cutoff_rules,technology_coverage,reference_year,data_source,comment
+Intermediate production,1 kg intermediate,1,kg,IN,LCA_working,none,single reference product,cradle-to-gate (attributional),"inputs <1% mass excluded; feedstock burden-free",commercial demineralisation/deproteinisation line,2020,"Author et al. (2021), doi:10.xxxx/yyyy Table 3",sub-process of the parent
+[EXCHANGES]
+role,description,quantity,unit,link_name,source_db,location,factor,link_rationale
+material,waste shell,33,kg,Waste shell feedstock,LCA_working,,,INTERNAL link to the burden-free child defined above
+material,"hydrochloric acid, 30% solution",2.56,kg,market for hydrochloric acid without water in 30% solution state,ecoinvent-3.10-cutoff,RoW,,
+material,"sodium hydroxide, 50% solution",1.3,kg,market for sodium hydroxide without water in 50% solution state,ecoinvent-3.10-cutoff,RoW,,"source table said GLO; ei3.10 has only RoW and RER -- RoW chosen, production is in IN. Confirmed with user"
+energy,"electricity, high voltage",1.3,kWh,market for electricity high voltage,ecoinvent-3.10-cutoff,IN,,
+waste,inert waste,-1.5,kg,treatment of inert waste inert material landfill,ecoinvent-3.10-cutoff,RoW,,"NEGATIVE amount is correct: ecoinvent treatment activities have a negative reference flow"
+emission,carbon dioxide,0.7,kg,Carbon dioxide fossil,ecoinvent-3.10-biosphere,air,,"unspecified 'air' subcompartment: no release height stated"
+#
+# ---------------------------------------------------------------------------------
+# TIER 1 (parent): the process the functional unit refers to.
+[HEADER]
+name,reference_product,output_quantity,output_unit,location,working_database,allocation,allocation_justification,system_boundary,cutoff_rules,technology_coverage,reference_year,data_source,comment
+Final material production,1 kg final material,1,kg,SG,LCA_working,none,single reference product,cradle-to-gate (attributional),"inputs <1% mass excluded; capital goods excluded",lab-to-pilot extrusion,2020,"Author et al. (2021), doi:10.xxxx/yyyy Table 1",parent process -- functional unit is 1 kg of this
+[EXCHANGES]
+role,description,quantity,unit,link_name,source_db,location,factor,link_rationale
+material,intermediate,0.11111,kg,Intermediate production,LCA_working,,,INTERNAL link to the tier-2 child defined above
+material,cellulose fibers,0.88889,kg,sulfate pulp production from softwood bleached,ecoinvent-3.10-cutoff,RoW,,"multi-output activity: select the node whose REFERENCE PRODUCT is 'sulfate pulp, bleached' -- name+location alone matches several"
+energy,"electricity, low voltage",0.25,kWh,market for electricity low voltage,ecoinvent-3.10-cutoff,SG,,
+transport,intermediate air freight,0.43444,tkm,market for transport freight aircraft unspecified,ecoinvent-3.10-cutoff,GLO,,"'unspecified' haul class: source reported generic air freight with no distance class. Confirmed with user"
